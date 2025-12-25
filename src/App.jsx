@@ -1,30 +1,42 @@
+import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Banner from "./components/Banner";
-import Row from "./components/Row";
+import Banner from './components/Banner';
 
+function Home() {
+  return (
+    <div>
+      <Banner />
+      {/* Add your rows back here later */}
+      <div className="px-8 py-12">
+        <h2 className="text-3xl font-bold text-white mb-8">Trending Now</h2>
+        <p className="text-white">Home content - rows will go here</p>
+      </div>
+    </div>
+  );
+}
 
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
-const base = `https://api.themoviedb.org/3`;
+function ManageProfiles() {
+  return <div className="h-screen flex items-center justify-center text-white text-2xl">Manage Profiles Page</div>;
+}
+
+function Account() {
+  return <div className="h-screen flex items-center justify-center text-white text-2xl">Account Page</div>;
+}
+
+function Help() {
+  return <div className="h-screen flex items-center justify-center text-white text-2xl">Help Center Page</div>;
+}
 
 function App() {
   return (
     <div className="bg-black text-white min-h-screen">
       <Navbar />
-      <Banner />
-
-      <section className="relative z-10 -mt-32 md:-mt-48 pb-20">
-        <div className="bg-black/80 backdrop-blur-sm pt-12">
-          <section className="relative z-0 bg-black pt-16 pb-20">
-            <div className="px-4 md:px-8 lg:px-12">
-              <Row title="Trending Now" fetchUrl={`${base}/trending/all/week?api_key=${API_KEY}`} />
-              <Row title="Popular Movies" fetchUrl={`${base}/movie/popular?api_key=${API_KEY}`} />
-              <Row title="Top Rated Movies" fetchUrl={`${base}/movie/top_rated?api_key=${API_KEY}`} />
-              <Row title="Now Playing in Theaters" fetchUrl={`${base}/movie/now_playing?api_key=${API_KEY}`} />
-              <Row title="Popular TV Shows" fetchUrl={`${base}/tv/popular?api_key=${API_KEY}`} />
-            </div>
-          </section>
-        </div>
-      </section>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/manage-profiles" element={<ManageProfiles />} />
+        <Route path="/account" element={<Account />} />
+        <Route path="/help" element={<Help />} />
+      </Routes>
     </div>
   );
 }
