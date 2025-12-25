@@ -15,7 +15,8 @@ function Row({ title, fetchUrl }) {
     const scrollRight = () => rowRef.current.scrollBy({ left: 800, behavior: 'smooth' });
 
     return (
-        <div className="my-4 md:my-8 group relative">
+
+        <div className="pt-12 md:pt-16 group relative">
             <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 px-4 md:px-0">{title}</h2>
             <div className="relative group">
                 {/* Left Arrow - always semi-visible, full on hover */}
@@ -38,7 +39,8 @@ function Row({ title, fetchUrl }) {
                     {movies.map(movie => <MovieCard key={movie.id} movie={movie} />)}
                 </div>
             </div>
-        </div >
+        </div>
+
     );
 }
 
