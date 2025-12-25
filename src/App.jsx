@@ -15,8 +15,8 @@ function App() {
 
       <section className="relative z-10 -mt-32 md:-mt-48 pb-20">
         <div className="bg-black/80 backdrop-blur-sm pt-8">
-          <section className="relative z-20 -mt-48 md:-mt-80 lg:-mt-96 pb-20">
-            <div className="px-8 md:px-12">
+          <section className="relative z-10 -mt-40 md:-mt-60 lg:-mt-80 pb-20">
+            <div className="px-4 md:px-8 lg:px-12">
               <Row title="Trending Now" fetchUrl={`${base}/trending/all/week?api_key=${API_KEY}`} />
               <Row title="Popular Movies" fetchUrl={`${base}/movie/popular?api_key=${API_KEY}`} />
               <Row title="Top Rated Movies" fetchUrl={`${base}/movie/top_rated?api_key=${API_KEY}`} />

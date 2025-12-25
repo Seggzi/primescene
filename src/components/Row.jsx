@@ -16,7 +16,7 @@ function Row({ title, fetchUrl }) {
 
     return (
         <div className="my-4 md:my-8 group relative">
-            <h2 className="text-2xl font-bold text-white mb-4 ml-12">{title}</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-white mb-6 px-4 md:px-0">{title}</h2>
             <div className="relative group">
                 {/* Left Arrow - always semi-visible, full on hover */}
                 <button

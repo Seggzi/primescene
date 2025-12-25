@@ -13,7 +13,7 @@ function MovieCard({ movie }) {
   }
 
   return (
-    <div className="flex-shrink-0 w-48 md:w-64 lg:w-72 transition-all duration-500 hover:scale-125 hover:z-50 group cursor-pointer">
+    <div className="flex-shrink-0 w-48 md:w-56 lg:w-64 transition-all duration-500 hover:scale-110 hover:z-50 group cursor-pointer">
       <img 
         src={`${posterBase}${movie.poster_path}`} 
         alt={title}
