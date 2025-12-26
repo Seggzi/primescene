@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Bell, ChevronDown, Menu, X } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
+  const { user, logout } = useAuth(); // Get current user and logout function
+
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -19,7 +22,7 @@ function Navbar() {
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  // Close search on click outside
+  // Close search when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -32,10 +35,11 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Search TMDB
+  // Debounced TMDB search
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
+      setLoading(false);
       return;
     }
 
@@ -43,12 +47,13 @@ function Navbar() {
     const timer = setTimeout(async () => {
       try {
         const res = await fetch(
-          `https://api.themoviedb.org/3/search/multi?api_key=${import.meta.env.VITE_TMDB_API_KEY}&query=${encodeURIComponent(query)}`
+          `https://api.themoviedb.org/3/search/multi?api_key=${import.meta.env.VITE_TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`
         );
         const data = await res.json();
-        setResults(data.results?.slice(0, 6) || []);
+        setResults(data.results?.slice(0, 8) || []);
       } catch (err) {
-        console.error(err);
+        console.error('Search error:', err);
+        setResults([]);
       } finally {
         setLoading(false);
       }
@@ -63,15 +68,22 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Get display name (Google name, email username, or "Guest")
+  const displayName = user 
+    ? (user.displayName || user.email?.split('@')[0] || 'User')
+    : 'Guest';
+
   return (
     <>
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-black/90 backdrop-blur-md' : 'bg-transparent'}`}>
         <div className="flex items-center justify-between px-4 sm:px-6 md:px-12 py-4">
+          {/* Left */}
           <div className="flex items-center gap-4 sm:gap-8">
             <Link to="/" className="text-2xl sm:text-3xl md:text-4xl font-bold text-red-600 hover:text-red-400 transition">
               PrimeScene
             </Link>
 
+            {/* Desktop menu */}
             <ul className="hidden lg:flex items-center gap-6 text-white text-base font-medium">
               <li><Link to="/" className="hover:text-gray-300 transition">Home</Link></li>
               <li><Link to="/shows" className="hover:text-gray-300 transition">Shows</Link></li>
@@ -83,25 +95,28 @@ function Navbar() {
             </ul>
           </div>
 
+          {/* Right */}
           <div className="flex items-center gap-4 sm:gap-6 text-white">
             {/* Search */}
             <div className="relative" ref={searchRef}>
               <Search 
-                className="w-6 h-6 cursor-pointer hover:text-gray-300 transition"
+                className="w-6 h-6 cursor-pointer hover:text-gray-300 transition hidden sm:block"
                 onClick={toggleSearch}
               />
               {searchOpen && (
-                <div className="absolute right-0 top-full mt-2 w-72 bg-black/95 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 overflow-hidden">
+                <div className="absolute right-0 top-full mt-2 w-64 sm:w-80 bg-black/95 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 overflow-hidden">
                   <input
                     type="text"
                     placeholder="Titles, people, genres..."
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    className="w-full px-4 py-3 bg-transparent text-white placeholder-white/50 focus:outline-none"
+                    className="w-full px-4 py-3 bg-transparent text-white placeholder-white/60 focus:outline-none"
                     autoFocus
                   />
                   <div className="max-h-96 overflow-y-auto">
-                    {loading && <p className="px-4 py-3 text-white/60 text-sm">Searching...</p>}
+                    {loading && (
+                      <p className="px-4 py-3 text-white/60 text-sm">Searching...</p>
+                    )}
                     {results.length > 0 ? (
                       results.map(item => (
                         <div 
@@ -110,7 +125,6 @@ function Navbar() {
                           onClick={() => {
                             setSearchOpen(false);
                             setQuery('');
-                            // Open modal - we'll connect this in App
                             window.dispatchEvent(new CustomEvent('openMovieModal', { detail: item }));
                           }}
                         >
@@ -141,6 +155,7 @@ function Navbar() {
 
             <Bell className="w-6 h-6 cursor-pointer hover:text-gray-300 transition hidden sm:block" />
 
+            {/* Desktop Profile */}
             <div className="relative hidden sm:block">
               <button 
                 onClick={toggleProfile}
@@ -151,7 +166,7 @@ function Navbar() {
               {profileOpen && (
                 <div className="absolute right-0 top-full mt-2 w-48 bg-black/95 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 py-2 z-50">
                   <div className="px-4 py-2 text-white text-sm border-b border-white/10">
-                    Current User
+                    {displayName}
                   </div>
                   <Link to="/manage-profiles" onClick={toggleProfile} className="block px-4 py-2 text-white hover:bg-white/10 transition text-sm">
                     Manage Profiles
@@ -162,13 +177,20 @@ function Navbar() {
                   <Link to="/help" onClick={toggleProfile} className="block px-4 py-2 text-white hover:bg-white/10 transition text-sm">
                     Help Center
                   </Link>
-                  <button onClick={toggleProfile} className="block w-full text-left px-4 py-2 text-white hover:bg-white/10 transition text-sm">
+                  <button 
+                    onClick={async () => {
+                      await logout();
+                      toggleProfile();
+                    }} 
+                    className="block w-full text-left px-4 py-2 text-white hover:bg-white/10 transition text-sm"
+                  >
                     Sign Out
                   </button>
                 </div>
               )}
             </div>
 
+            {/* Mobile Hamburger */}
             <button onClick={toggleMobileMenu} className="lg:hidden">
               {mobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
             </button>
@@ -191,16 +213,26 @@ function Navbar() {
 
           <div className="mt-auto mb-10">
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-red-600 rounded-full" />
+              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">
+                {user ? displayName[0].toUpperCase() : 'G'}
+              </div>
               <div>
-                <p className="text-white font-medium">Current User</p>
+                <p className="text-white font-medium">{displayName}</p>
                 <p className="text-white/70 text-sm">Switch Profile</p>
               </div>
             </div>
             <div className="space-y-3 text-white/80 text-sm">
               <Link to="/account" onClick={closeMobileMenu} className="block hover:text-white transition">Account</Link>
               <Link to="/help" onClick={closeMobileMenu} className="block hover:text-white transition">Help Center</Link>
-              <button onClick={closeMobileMenu} className="block w-full text-left hover:text-white transition">Sign Out</button>
+              <button 
+                onClick={async () => {
+                  await logout();
+                  closeMobileMenu();
+                }} 
+                className="block w-full text-left hover:text-white transition"
+              >
+                Sign Out
+              </button>
             </div>
           </div>
         </div>

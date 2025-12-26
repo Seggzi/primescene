@@ -1,11 +1,14 @@
 import { useEffect, useState } from 'react';
 import Modal from './Modal.jsx';
 import MovieDetail from './MovieDetail.jsx';
+import { useMyList } from '../context/MyListContext';
 
 function Banner({ onPlay, onInfo }) {
     const [movie, setMovie] = useState(null);
     const [playOpen, setPlayOpen] = useState(false);
     const [infoOpen, setInfoOpen] = useState(false);
+    const { addToMyList, removeFromMyList, isInMyList } = useMyList();
+    const inList = isInMyList(movie?.id);
 
     useEffect(() => {
         const fetchBanner = async () => {
@@ -88,8 +91,11 @@ function Banner({ onPlay, onInfo }) {
                     >
                         ℹ More Info
                     </button>
-                    <button className="px-6 sm:px-8 md:px-10 py-2 sm:py-3 bg-transparent border-2 border-white text-white text-base sm:text-lg font-bold rounded-lg hover:bg-white/10 transition flex items-center gap-2">
-                        + Add to List
+                    <button
+                        onClick={() => inList ? removeFromMyList(movie.id) : addToMyList(movie)}
+                        className="px-10 py-3 bg-transparent border-2 border-white text-white text-lg font-bold rounded-lg hover:bg-white/10 transition flex items-center gap-3"
+                    >
+                        {inList ? '− Remove from List' : '+ Add to List'}
                     </button>
                 </div>
             </div>
