@@ -33,7 +33,7 @@ function Banner({ onPlay, onInfo }) {
     }, []);
 
     if (!movie) {
-        return <div className="h-screen bg-slate-900 flex items-center justify-center text-white text-3xl">Loading...</div>;
+        return <div className="h-[60vh] md:h-[80vh] bg-slate-900 flex items-center justify-center text-white text-2xl">Loading...</div>;
     }
 
     const backdrop = movie.backdrop_path
@@ -43,7 +43,7 @@ function Banner({ onPlay, onInfo }) {
     const rating = movie.vote_average ? movie.vote_average.toFixed(1) : 'N/A';
 
     return (
-        <div className="relative h-screen overflow-hidden">
+        <div className="relative h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-[90vh] overflow-hidden">
             <img
                 src={backdrop}
                 alt={movie.title || movie.name}
@@ -53,54 +53,57 @@ function Banner({ onPlay, onInfo }) {
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent"></div>
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-transparent to-transparent"></div>
 
-            <div className="absolute bottom-0 left-0 pb-20 px-8 md:px-16 lg:px-24 max-w-4xl">
-                <p className="text-sm md:text-base text-yellow-400 font-semibold mb-4 tracking-wider uppercase">
+            <div className="absolute bottom-0 left-0 pb-10 sm:pb-12 md:pb-16 px-4 sm:px-6 md:px-10 lg:px-16 max-w-full">
+                <p className="text-xs sm:text-sm md:text-base text-yellow-400 font-semibold mb-2 sm:mb-4 tracking-wider uppercase">
                     Featured
                 </p>
 
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold text-white mb-6 leading-tight"
+                {/* Title - smaller, fixed size, no overflow */}
+                <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-3 sm:mb-4 leading-tight truncate"
                     style={{ textShadow: '0 0 20px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.8), 2px 2px 4px black' }}>
                     {movie.title || movie.name}
                 </h1>
 
-                <p className="text-lg md:text-xl text-yellow-400 font-semibold mb-6">
+                <p className="text-sm sm:text-base md:text-lg text-yellow-400 font-semibold mb-3 sm:mb-4">
                     ★ {rating} Rating
                 </p>
 
-                <p className="text-base md:text-lg text-white mb-10 max-w-3xl leading-relaxed line-clamp-5"
+                {/* Overview - smaller, responsive */}
+                <p className="text-xs sm:text-sm md:text-base text-white mb-6 sm:mb-8 max-w-full sm:max-w-2xl leading-relaxed line-clamp-3 sm:line-clamp-4"
                     style={{ textShadow: '2px 2px 4px black, 0 0 10px rgba(0,0,0,0.8)' }}>
                     {movie.overview || 'Discover this trending title on PrimeScene.'}
                 </p>
 
-                <div className="flex gap-8">
+                {/* Buttons - smaller on mobile, rounded */}
+                <div className="flex flex-wrap gap-4 sm:gap-6">
                     <button
                         onClick={() => onPlay(movie)}
-                        className="px-10 py-3 bg-white text-black text-lg font-bold rounded-lg hover:bg-gray-200 transition flex items-center gap-3 shadow-2xl"
+                        className="px-6 sm:px-8 md:px-10 py-2 sm:py-3 bg-white text-black text-base sm:text-lg font-bold rounded-lg hover:bg-gray-200 transition flex items-center gap-2 shadow-2xl"
                     >
                         ▶ Play
                     </button>
                     <button
                         onClick={() => onInfo(movie)}
-                        className="px-10 py-3 bg-gray-600/80 text-white text-lg font-bold rounded-lg hover:bg-gray-600 transition flex items-center gap-3 shadow-2xl"
+                        className="px-6 sm:px-8 md:px-10 py-2 sm:py-3 bg-gray-600/80 text-white text-base sm:text-lg font-bold rounded-lg hover:bg-gray-600 transition flex items-center gap-2 shadow-2xl"
                     >
                         ℹ More Info
                     </button>
-                    <button className="px-10 py-3 bg-transparent border-2 border-white text-white text-lg font-bold rounded-lg hover:bg-white/10 transition flex items-center gap-3">
+                    <button className="px-6 sm:px-8 md:px-10 py-2 sm:py-3 bg-transparent border-2 border-white text-white text-base sm:text-lg font-bold rounded-lg hover:bg-white/10 transition flex items-center gap-2">
                         + Add to List
                     </button>
                 </div>
             </div>
 
-            {/* Modals - only render when open */}
+            {/* Modals */}
             {playOpen && (
                 <Modal isOpen={playOpen} onClose={() => setPlayOpen(false)}>
-                    <MovieDetail movie={movie} />
+                    <MovieDetail movie={movie} showOnlyPlayer={true} />
                 </Modal>
             )}
 
             {infoOpen && (
                 <Modal isOpen={infoOpen} onClose={() => setInfoOpen(false)}>
-                    <MovieDetail movie={movie} />
+                    <MovieDetail movie={movie} showOnlyPlayer={false} />
                 </Modal>
             )}
         </div>
