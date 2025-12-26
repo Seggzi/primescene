@@ -1,42 +1,49 @@
-import { Routes, Route } from 'react-router-dom';
+import { useState } from 'react';
 import Navbar from './components/Navbar';
 import Banner from './components/Banner';
+import Row from './components/Row';
+import Modal from './components/Modal';
+import MovieDetail from './components/MovieDetail';
 
-function Home() {
-  return (
-    <div>
-      <Banner />
-      {/* Add your rows back here later */}
-      <div className="px-8 py-12">
-        <h2 className="text-3xl font-bold text-white mb-8">Trending Now</h2>
-        <p className="text-white">Home content - rows will go here</p>
-      </div>
-    </div>
-  );
-}
-
-function ManageProfiles() {
-  return <div className="h-screen flex items-center justify-center text-white text-2xl">Manage Profiles Page</div>;
-}
-
-function Account() {
-  return <div className="h-screen flex items-center justify-center text-white text-2xl">Account Page</div>;
-}
-
-function Help() {
-  return <div className="h-screen flex items-center justify-center text-white text-2xl">Help Center Page</div>;
-}
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const base = 'https://api.themoviedb.org/3';
 
 function App() {
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [playOpen, setPlayOpen] = useState(false);
+
+  const openDetail = (movie) => {
+    setSelectedMovie(movie);
+    setDetailOpen(true);
+  };
+
+  const openPlay = (movie) => {
+    setSelectedMovie(movie);
+    setPlayOpen(true);
+  };
+
   return (
-    <div className="bg-black text-white min-h-screen">
+    <div className="bg-black text-white">
       <Navbar />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/manage-profiles" element={<ManageProfiles />} />
-        <Route path="/account" element={<Account />} />
-        <Route path="/help" element={<Help />} />
-      </Routes>
+      <Banner onPlay={openPlay} onInfo={openDetail} />
+
+      <div className="pb-20">
+        <Row title="Trending Now" fetchUrl={`${base}/trending/all/week?api_key=${API_KEY}`} onCardClick={openDetail} />
+        <Row title="Popular Movies" fetchUrl={`${base}/movie/popular?api_key=${API_KEY}`} onCardClick={openDetail} />
+        <Row title="Top Rated" fetchUrl={`${base}/movie/top_rated?api_key=${API_KEY}`} onCardClick={openDetail} />
+        <Row title="Now Playing" fetchUrl={`${base}/movie/now_playing?api_key=${API_KEY}`} onCardClick={openDetail} />
+      </div>
+
+      {/* Play Modal - only trailer + fake full movie controls */}
+      <Modal isOpen={playOpen} onClose={() => setPlayOpen(false)}>
+        {selectedMovie && <MovieDetail movie={selectedMovie} showOnlyPlayer={true} />}
+      </Modal>
+
+      {/* More Info / Card Click Modal - full detail */}
+      <Modal isOpen={detailOpen} onClose={() => setDetailOpen(false)}>
+        {selectedMovie && <MovieDetail movie={selectedMovie} showOnlyPlayer={false} />}
+      </Modal>
     </div>
   );
 }
