@@ -1,27 +1,68 @@
+import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Banner from './components/Banner';
+import Row from './components/Row';
+import Modal from './components/Modal';
+import MovieDetail from './components/MovieDetail';
+
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+const base = 'https://api.themoviedb.org/3';
+
+function Home() {
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const openModal = (movie) => {
+    setSelectedMovie(movie);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedMovie(null);
+  };
+
+  return (
+    <div>
+      <Banner onPlay={openModal} onInfo={openModal} />
+
+      <div className="pb-20">
+        <Row 
+          title="Trending Now" 
+          fetchUrl={`${base}/trending/all/week?api_key=${API_KEY}`} 
+          onCardClick={openModal} 
+        />
+        <Row 
+          title="Popular Movies" 
+          fetchUrl={`${base}/movie/popular?api_key=${API_KEY}`} 
+          onCardClick={openModal} 
+        />
+        <Row 
+          title="Top Rated" 
+          fetchUrl={`${base}/movie/top_rated?api_key=${API_KEY}`} 
+          onCardClick={openModal} 
+        />
+        <Row 
+          title="Now Playing" 
+          fetchUrl={`${base}/movie/now_playing?api_key=${API_KEY}`} 
+          onCardClick={openModal} 
+        />
+      </div>
+
+      <Modal isOpen={modalOpen} onClose={closeModal}>
+        {selectedMovie && <MovieDetail movie={selectedMovie} />}
+      </Modal>
+    </div>
+  );
+}
 
 // Placeholder pages
-const Home = () => (
-  <div>
-    <Banner />
-    <div className="p-8 text-white">
-      <h1 className="text-4xl font-bold mb-4">Home Page</h1>
-      <p>Welcome to PrimeScene!</p>
-    </div>
+const Placeholder = ({ name }) => (
+  <div className="min-h-screen text-white flex items-center justify-center text-4xl bg-gray-900">
+    {name} Page
   </div>
 );
-
-const Shows = () => <div className="min-h-screen text-white flex items-center justify-center text-4xl bg-gray-900">TV Shows Page</div>;
-const Movies = () => <div className="min-h-screen text-white flex items-center justify-center text-4xl bg-gray-900">Movies Page</div>;
-const Games = () => <div className="min-h-screen text-white flex items-center justify-center text-4xl bg-gray-900">Games Page</div>;
-const NewPopular = () => <div className="min-h-screen text-white flex items-center justify-center text-4xl bg-gray-900">New & Popular</div>;
-const MyList = () => <div className="min-h-screen text-white flex items-center justify-center text-4xl bg-gray-900">My List</div>;
-const BrowseLanguages = () => <div className="min-h-screen text-white flex items-center justify-center text-4xl bg-gray-900">Browse by Languages</div>;
-const ManageProfiles = () => <div className="min-h-screen text-white flex items-center justify-center text-4xl bg-gray-900">Manage Profiles</div>;
-const Account = () => <div className="min-h-screen text-white flex items-center justify-center text-4xl bg-gray-900">Account</div>;
-const Help = () => <div className="min-h-screen text-white flex items-center justify-center text-4xl bg-gray-900">Help Center</div>;
 
 function App() {
   return (
@@ -29,15 +70,15 @@ function App() {
       <Navbar />
       <Routes>
         <Route path="/" element={<Home />} />
-        <Route path="/shows" element={<Shows />} />
-        <Route path="/movies" element={<Movies />} />
-        <Route path="/games" element={<Games />} />
-        <Route path="/new-popular" element={<NewPopular />} />
-        <Route path="/my-list" element={<MyList />} />
-        <Route path="/browse-languages" element={<BrowseLanguages />} />
-        <Route path="/manage-profiles" element={<ManageProfiles />} />
-        <Route path="/account" element={<Account />} />
-        <Route path="/help" element={<Help />} />
+        <Route path="/shows" element={<Placeholder name="TV Shows" />} />
+        <Route path="/movies" element={<Placeholder name="Movies" />} />
+        <Route path="/games" element={<Placeholder name="Games" />} />
+        <Route path="/new-popular" element={<Placeholder name="New & Popular" />} />
+        <Route path="/my-list" element={<Placeholder name="My List" />} />
+        <Route path="/browse-languages" element={<Placeholder name="Browse by Languages" />} />
+        <Route path="/manage-profiles" element={<Placeholder name="Manage Profiles" />} />
+        <Route path="/account" element={<Placeholder name="Account" />} />
+        <Route path="/help" element={<Placeholder name="Help Center" />} />
       </Routes>
     </div>
   );
