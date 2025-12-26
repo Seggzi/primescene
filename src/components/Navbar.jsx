@@ -1,14 +1,63 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, Bell, ChevronDown, Menu, X } from 'lucide-react';
 
 function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+
+  const searchRef = useRef(null);
 
   const toggleProfile = () => setProfileOpen(!profileOpen);
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
+  const toggleSearch = () => setSearchOpen(prev => !prev);
+
+  const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  // Close search when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setSearchOpen(false);
+        setQuery('');
+        setResults([]);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Fetch search results (debounced)
+  useEffect(() => {
+    if (!query.trim()) {
+      setResults([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(
+          `https://api.themoviedb.org/3/search/multi?api_key=${import.meta.env.VITE_TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`
+        );
+        const data = await res.json();
+        setResults(data.results?.slice(0, 6) || []); // top 6 results
+      } catch (err) {
+        console.error('Search error:', err);
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }, 400); // 400ms debounce
+
+    return () => clearTimeout(timer);
+  }, [query]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -16,18 +65,13 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const closeMobileMenu = () => setMobileMenuOpen(false);
-
   return (
     <>
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-black/90 backdrop-blur-md' : 'bg-transparent'}`}>
         <div className="flex items-center justify-between px-4 sm:px-6 md:px-12 py-4">
-          {/* Left side */}
+          {/* Left */}
           <div className="flex items-center gap-4 sm:gap-8">
-            <Link 
-              to="/" 
-              className="text-2xl sm:text-3xl md:text-4xl font-bold text-red-600 hover:text-red-400 transition"
-            >
+            <Link to="/" className="text-2xl sm:text-3xl md:text-4xl font-bold text-red-600 hover:text-red-400 transition">
               PrimeScene
             </Link>
 
@@ -43,12 +87,67 @@ function Navbar() {
             </ul>
           </div>
 
-          {/* Right side */}
+          {/* Right */}
           <div className="flex items-center gap-4 sm:gap-6 text-white">
-            <Search className="w-6 h-6 cursor-pointer hover:text-gray-300 transition hidden sm:block" />
+            {/* Search */}
+            <div className="relative" ref={searchRef}>
+              <Search 
+                className="w-6 h-6 cursor-pointer hover:text-gray-300 transition"
+                onClick={toggleSearch}
+              />
+              {searchOpen && (
+                <div className="absolute right-0 top-full mt-2 w-72 bg-black/95 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 overflow-hidden">
+                  <input
+                    type="text"
+                    placeholder="Titles, people, genres..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="w-full px-4 py-3 bg-transparent text-white placeholder-white/50 focus:outline-none"
+                    autoFocus
+                  />
+                  <div className="max-h-96 overflow-y-auto">
+                    {loading && (
+                      <p className="px-4 py-3 text-white/60 text-sm">Searching...</p>
+                    )}
+                    {results.length > 0 ? (
+                      results.map(item => (
+                        <div 
+                          key={item.id}
+                          className="flex items-center gap-4 px-4 py-3 hover:bg-white/10 transition cursor-pointer"
+                          onClick={() => {
+                            setSearchOpen(false);
+                            setQuery('');
+                            // You can navigate to detail page here later
+                          }}
+                        >
+                          <img 
+                            src={item.poster_path || item.profile_path 
+                              ? `https://image.tmdb.org/t/p/w92${item.poster_path || item.profile_path}` 
+                              : 'https://via.placeholder.com/92x138?text=No+Image'}
+                            alt={item.title || item.name}
+                            className="w-12 h-18 object-cover rounded"
+                          />
+                          <div>
+                            <p className="text-white font-medium text-sm">
+                              {item.title || item.name}
+                            </p>
+                            <p className="text-white/60 text-xs capitalize">
+                              {item.media_type}
+                            </p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      !loading && query && <p className="px-4 py-3 text-white/60 text-sm">No results found</p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Bell className="w-6 h-6 cursor-pointer hover:text-gray-300 transition hidden sm:block" />
 
-            {/* Profile button (desktop) */}
+            {/* Desktop Profile */}
             <div className="relative hidden sm:block">
               <button 
                 onClick={toggleProfile}
@@ -62,93 +161,43 @@ function Navbar() {
                   <div className="px-4 py-2 text-white text-sm border-b border-white/10">
                     Current User
                   </div>
-                  <Link 
-                    to="/manage-profiles" 
-                    onClick={toggleProfile}
-                    className="block px-4 py-2 text-white hover:bg-white/10 transition text-sm"
-                  >
+                  <Link to="/manage-profiles" onClick={toggleProfile} className="block px-4 py-2 text-white hover:bg-white/10 transition text-sm">
                     Manage Profiles
                   </Link>
-                  <Link 
-                    to="/account" 
-                    onClick={toggleProfile}
-                    className="block px-4 py-2 text-white hover:bg-white/10 transition text-sm"
-                  >
+                  <Link to="/account" onClick={toggleProfile} className="block px-4 py-2 text-white hover:bg-white/10 transition text-sm">
                     Account
                   </Link>
-                  <Link 
-                    to="/help" 
-                    onClick={toggleProfile}
-                    className="block px-4 py-2 text-white hover:bg-white/10 transition text-sm"
-                  >
+                  <Link to="/help" onClick={toggleProfile} className="block px-4 py-2 text-white hover:bg-white/10 transition text-sm">
                     Help Center
                   </Link>
-                  <button 
-                    className="block w-full text-left px-4 py-2 text-white hover:bg-white/10 transition text-sm"
-                  >
+                  <button onClick={toggleProfile} className="block w-full text-left px-4 py-2 text-white hover:bg-white/10 transition text-sm">
                     Sign Out
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Mobile hamburger */}
-            <button 
-              onClick={toggleMobileMenu}
-              className="lg:hidden text-white"
-            >
+            {/* Mobile Hamburger */}
+            <button onClick={toggleMobileMenu} className="lg:hidden">
               {mobileMenuOpen ? <X className="w-8 h-8" /> : <Menu className="w-8 h-8" />}
             </button>
           </div>
         </div>
       </nav>
 
-      {/* Mobile side menu */}
-      <div 
-        className={`fixed inset-y-0 left-0 z-40 w-72 bg-black/95 backdrop-blur-lg transform transition-transform duration-300 lg:hidden ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
-      >
+      {/* Mobile Side Menu & Overlay */}
+      <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-black/95 backdrop-blur-lg transform transition-transform duration-300 lg:hidden ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full pt-20 px-6">
           <ul className="space-y-6 text-white text-lg font-medium">
-            <li>
-              <Link to="/" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link to="/shows" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">
-                Shows
-              </Link>
-            </li>
-            <li>
-              <Link to="/movies" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">
-                Movies
-              </Link>
-            </li>
-            <li>
-              <Link to="/games" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">
-                Games
-              </Link>
-            </li>
-            <li>
-              <Link to="/new-popular" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">
-                New & Popular
-              </Link>
-            </li>
-            <li>
-              <Link to="/my-list" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">
-                My List
-              </Link>
-            </li>
-            <li>
-              <Link to="/browse-languages" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">
-                Browse by Languages
-              </Link>
-            </li>
+            <li><Link to="/" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Home</Link></li>
+            <li><Link to="/shows" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Shows</Link></li>
+            <li><Link to="/movies" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Movies</Link></li>
+            <li><Link to="/games" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Games</Link></li>
+            <li><Link to="/new-popular" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">New & Popular</Link></li>
+            <li><Link to="/my-list" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">My List</Link></li>
+            <li><Link to="/browse-languages" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Browse by Languages</Link></li>
           </ul>
 
-          {/* Profile section at bottom of mobile menu */}
           <div className="mt-auto mb-10">
             <div className="flex items-center gap-4 mb-6">
               <div className="w-12 h-12 bg-red-600 rounded-full" />
@@ -164,7 +213,7 @@ function Navbar() {
               <Link to="/help" onClick={closeMobileMenu} className="block hover:text-white transition">
                 Help Center
               </Link>
-              <button className="block hover:text-white transition">
+              <button onClick={closeMobileMenu} className="block w-full text-left hover:text-white transition">
                 Sign Out
               </button>
             </div>
@@ -172,12 +221,8 @@ function Navbar() {
         </div>
       </div>
 
-      {/* Overlay when mobile menu is open */}
       {mobileMenuOpen && (
-        <div 
-          className="fixed inset-0 bg-black/70 z-30 lg:hidden" 
-          onClick={closeMobileMenu}
-        />
+        <div className="fixed inset-0 bg-black/70 z-30 lg:hidden" onClick={closeMobileMenu} />
       )}
     </>
   );
