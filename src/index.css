@@ -17,7 +17,7 @@ body {
   display: none;  /* Chrome, Safari, Opera */
 }
 
-
+/* Styling the scrollbar for the Cast section */
 .overflow-x-auto::-webkit-scrollbar {
   height: 6px;
 }
@@ -33,4 +33,22 @@ body {
 
 .overflow-x-auto::-webkit-scrollbar-thumb:hover {
   background: #e50914; 
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+/* Hide scrollbars but allow scrolling */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
