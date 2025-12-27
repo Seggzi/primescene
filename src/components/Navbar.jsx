@@ -7,7 +7,8 @@ function Navbar() {
   const { user, logout } = useAuth();
   const location = useLocation();
 
-  const isLandingPage = location.pathname === '/' && !user;
+  // Show minimal Netflix-style navbar on landing and login when not logged in
+  const isMinimalPage = (location.pathname === '/' || location.pathname === '/login') && !user;
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -17,7 +18,7 @@ function Navbar() {
   const [loading, setLoading] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  const searchRef = useRef(null); 
+  const searchRef = useRef(null);
 
   const toggleProfile = () => setProfileOpen(!profileOpen);
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
@@ -25,6 +26,7 @@ function Navbar() {
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
+  // Close search when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -74,8 +76,8 @@ function Navbar() {
     ? (user.displayName || user.email?.split('@')[0] || 'User')
     : 'Guest';
 
-  // Minimal Netflix-style navbar for landing page only (when not logged in)
-  if (isLandingPage) {
+  // Minimal Netflix-style navbar for landing and login pages (not logged in)
+  if (isMinimalPage) {
     return (
       <nav className="fixed top-0 left-0 right-0 z-50">
         <div className="flex items-center justify-between px-6 sm:px-12 lg:px-24 py-6">
@@ -83,12 +85,15 @@ function Navbar() {
             PrimeScene
           </Link>
 
-          <Link 
-            to="/login"
-            className="px-6 py-2 bg-red-600 text-white text-sm sm:text-base font-medium rounded hover:bg-red-700 transition"
-          >
-            Sign In
-          </Link>
+          {/* Show "Sign In" only on landing, not on login page */}
+          {location.pathname !== '/login' && (
+            <Link 
+              to="/login"
+              className="px-6 py-2 bg-red-600 text-white font-medium rounded hover:bg-red-700 transition"
+            >
+              Sign In
+            </Link>
+          )}
         </div>
       </nav>
     );
