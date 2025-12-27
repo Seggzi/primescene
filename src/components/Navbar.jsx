@@ -85,11 +85,10 @@ function Navbar() {
             PrimeScene
           </Link>
 
-          {/* Show "Sign In" only on landing, not on login page */}
           {location.pathname !== '/login' && (
             <Link 
               to="/login"
-              className="px-6 py-2 bg-red-600 text-white font-medium rounded hover:bg-red-700 transition"
+              className="px-6 py-2 bg-red-600 text-white text-sm sm:text-base font-medium rounded hover:bg-red-700 transition"
             >
               Sign In
             </Link>
@@ -99,10 +98,10 @@ function Navbar() {
     );
   }
 
-  // Full navbar for logged-in users and all other pages
+  // Full navbar for logged-in users
   return (
     <>
-      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-black/90 backdrop-blur-md' : 'bg-transparent'}`}>
+      <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-black' : 'bg-transparent'}`}>
         <div className="flex items-center justify-between px-4 sm:px-6 md:px-12 py-4">
           {/* Left */}
           <div className="flex items-center gap-4 sm:gap-8">
@@ -110,15 +109,15 @@ function Navbar() {
               PrimeScene
             </Link>
 
-            {/* Desktop menu */}
-            <ul className="hidden lg:flex items-center gap-6 text-white text-base font-medium">
+            {/* Desktop menu - Netflix-style small font */}
+            <ul className="hidden lg:flex items-center gap-6 text-white text-sm font-medium">
               <li><Link to="/" className="hover:text-gray-300 transition">Home</Link></li>
-              <li><Link to="/shows" className="hover:text-gray-300 transition">Shows</Link></li>
+              <li><Link to="/tv-shows" className="hover:text-gray-300 transition">TV Shows</Link></li>
               <li><Link to="/movies" className="hover:text-gray-300 transition">Movies</Link></li>
-              <li><Link to="/games" className="hover:text-gray-300 transition">Games</Link></li>
-              <li><Link to="/new-popular" className="hover:text-gray-300 transition">New & Popular</Link></li>
+              <li><Link to="/animation" className="hover:text-gray-300 transition">Animation</Link></li>
+              <li><Link to="/novels" className="hover:text-gray-300 transition">Novels</Link></li>
+              <li><Link to="/most-watched" className="hover:text-gray-300 transition">Most Watched</Link></li>
               <li><Link to="/my-list" className="hover:text-gray-300 transition">My List</Link></li>
-              <li><Link to="/browse-languages" className="hover:text-gray-300 transition">Browse by Languages</Link></li>
             </ul>
           </div>
 
@@ -230,12 +229,12 @@ function Navbar() {
         <div className="flex flex-col h-full pt-20 px-6">
           <ul className="space-y-6 text-white text-lg font-medium">
             <li><Link to="/" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Home</Link></li>
-            <li><Link to="/shows" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Shows</Link></li>
+            <li><Link to="/tv-shows" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">TV Shows</Link></li>
             <li><Link to="/movies" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Movies</Link></li>
-            <li><Link to="/games" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Games</Link></li>
-            <li><Link to="/new-popular" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">New & Popular</Link></li>
+            <li><Link to="/animation" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Animation</Link></li>
+            <li><Link to="/novels" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Novels</Link></li>
+            <li><Link to="/most-watched" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Most Watched</Link></li>
             <li><Link to="/my-list" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">My List</Link></li>
-            <li><Link to="/browse-languages" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Browse by Languages</Link></li>
           </ul>
 
           <div className="mt-auto mb-10">
