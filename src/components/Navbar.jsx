@@ -1,10 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Search, Bell, ChevronDown, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
-  const { user, logout } = useAuth(); // Get current user and logout function
+  const { user, logout } = useAuth();
+  const location = useLocation();
+
+  const isLandingPage = location.pathname === '/' && !user;
 
   const [profileOpen, setProfileOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -14,7 +17,7 @@ function Navbar() {
   const [loading, setLoading] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  const searchRef = useRef(null);
+  const searchRef = useRef(null); 
 
   const toggleProfile = () => setProfileOpen(!profileOpen);
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
@@ -22,7 +25,6 @@ function Navbar() {
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  // Close search when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -68,11 +70,31 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Get display name (Google name, email username, or "Guest")
   const displayName = user 
     ? (user.displayName || user.email?.split('@')[0] || 'User')
     : 'Guest';
 
+  // Minimal Netflix-style navbar for landing page only (when not logged in)
+  if (isLandingPage) {
+    return (
+      <nav className="fixed top-0 left-0 right-0 z-50">
+        <div className="flex items-center justify-between px-6 sm:px-12 lg:px-24 py-6">
+          <Link to="/" className="text-3xl sm:text-4xl font-bold text-red-600">
+            PrimeScene
+          </Link>
+
+          <Link 
+            to="/login"
+            className="px-6 py-2 bg-red-600 text-white text-sm sm:text-base font-medium rounded hover:bg-red-700 transition"
+          >
+            Sign In
+          </Link>
+        </div>
+      </nav>
+    );
+  }
+
+  // Full navbar for logged-in users and all other pages
   return (
     <>
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-black/90 backdrop-blur-md' : 'bg-transparent'}`}>
