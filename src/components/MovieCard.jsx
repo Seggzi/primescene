@@ -1,43 +1,58 @@
-import { useMyList } from '../context/MyListContext';
+import React from 'react';
+import { Play, Plus, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-function MovieCard({ movie, onClick }) {
-  const { isInMyList, toggleMyList } = useMyList();
-  const inList = isInMyList(movie.id);
+const MovieCard = ({ movie, onClick }) => {
+  const navigate = useNavigate();
+  const imageUrl = movie.backdrop_path || movie.poster_path;
 
-  const handleAddToList = (e) => {
-    e.stopPropagation(); // prevent opening modal
-    toggleMyList(movie);
+  // Handles clicking the play button directly on the card
+  const handlePlay = (e) => {
+    e.stopPropagation();
+    const type = movie.media_type || (movie.title ? 'movie' : 'tv');
+    navigate(`/watch/${type}/${movie.id}`);
   };
-
-  const poster = movie.poster_path 
-    ? `https://image.tmdb.org/t/p/w342${movie.poster_path}`
-    : 'https://via.placeholder.com/342x513?text=No+Image';
 
   return (
     <div 
-      className="flex-shrink-0 relative group cursor-pointer w-36 sm:w-40 md:w-44 lg:w-48"
       onClick={() => onClick(movie)}
+      className="relative group cursor-pointer transition-all duration-300 ease-in-out transform hover:scale-110 hover:z-50"
     >
-      <img 
-        src={poster} 
+      {/* Poster Image */}
+      <img
+        src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`}
         alt={movie.title || movie.name}
-        className="w-full rounded-lg shadow-lg transition-transform group-hover:scale-110"
+        className="rounded-sm object-cover w-full h-auto shadow-md group-hover:shadow-2xl"
       />
-      <p className="text-white text-center mt-2 text-sm line-clamp-2">
-        {movie.title || movie.name}
-      </p>
 
-      {/* + / - Button on hover */}
-      <button 
-        onClick={handleAddToList}
-        className="absolute top-2 right-2 w-10 h-10 bg-black/70 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-      >
-        <span className="text-white text-2xl font-bold">
-          {inList ? '−' : '+'}
-        </span>
-      </button>
+      {/* Hover Overlay */}
+      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-sm flex flex-col justify-end p-4">
+        <h4 className="text-white font-bold text-sm mb-2 truncate">
+          {movie.title || movie.name}
+        </h4>
+        
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={handlePlay}
+            className="p-2 bg-white rounded-full text-black hover:bg-gray-200"
+          >
+            <Play size={16} fill="black" />
+          </button>
+          <button className="p-2 border border-white/50 rounded-full text-white hover:border-white">
+            <Plus size={16} />
+          </button>
+          <div className="ml-auto">
+            <ChevronRight className="text-white/70" />
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2 mt-2 text-[10px] font-bold">
+          <span className="text-green-500">{movie.vote_average?.toFixed(1)} Rating</span>
+          <span className="text-white border border-white/40 px-1 px-0.5">HD</span>
+        </div>
+      </div>
     </div>
   );
-}
+};
 
 export default MovieCard;

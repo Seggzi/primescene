@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom'; // Added useNavigate
 import { Search, Bell, ChevronDown, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate(); // Initialize navigation
 
   // Show minimal Netflix-style navbar on landing and login when not logged in
   const isMinimalPage = (location.pathname === '/' || location.pathname === '/login') && !user;
@@ -25,6 +26,26 @@ function Navbar() {
   const toggleSearch = () => setSearchOpen(!searchOpen);
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
+
+  // --- NEW INSTANT SEARCH LOGIC ---
+  const handleInputChange = (e) => {
+    const value = e.target.value;
+    setQuery(value);
+
+    if (value.trim().length > 0) {
+      // Navigate to search page immediately as they type so it affects the whole screen
+      navigate(`/search?q=${encodeURIComponent(value.trim())}`);
+    } else {
+      // If they clear the input, go back home
+      navigate('/home');
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      setSearchOpen(false); // Close the dropdown on Enter
+    }
+  };
 
   // Close search when clicking outside
   useEffect(() => {
@@ -126,16 +147,17 @@ function Navbar() {
             {/* Search */}
             <div className="relative" ref={searchRef}>
               <Search 
-                className="w-6 h-6 cursor-pointer hover:text-gray-300 transition hidden sm:block"
+                className="w-6 h-6 cursor-pointer hover:text-gray-300 transition hidden sm:block" 
                 onClick={toggleSearch}
               />
               {searchOpen && (
                 <div className="absolute right-0 top-full mt-2 w-64 sm:w-80 bg-black/95 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 overflow-hidden">
                   <input
                     type="text"
-                    placeholder="Titles, people, genres..."
+                    placeholder="Start typing to search..."
                     value={query}
-                    onChange={(e) => setQuery(e.target.value)}
+                    onChange={handleInputChange} // Updated to handle instant search
+                    onKeyDown={handleKeyDown}
                     className="w-full px-4 py-3 bg-transparent text-white placeholder-white/60 focus:outline-none"
                     autoFocus
                   />
