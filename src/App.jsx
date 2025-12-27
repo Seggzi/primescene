@@ -38,7 +38,7 @@ function GenreBar({ activeGenre, onGenreSelect }) {
   );
 }
 
-// --- MOVIE DETAIL PAGE (FULL) ---
+// --- MOVIE DETAIL PAGE ---
 function MovieDetailPage() {
   const { type, id } = useParams();
   const navigate = useNavigate();
@@ -47,12 +47,10 @@ function MovieDetailPage() {
   const { addToMyList, removeFromMyList, isInMyList } = useMyList();
 
   useEffect(() => {
-    // Fetch Movie Details + Credits
     fetch(`${base}/${type}/${id}?api_key=${API_KEY}&append_to_response=credits,videos`)
       .then(res => res.json())
       .then(data => setMovie(data));
 
-    // Fetch Similar Movies
     fetch(`${base}/${type}/${id}/similar?api_key=${API_KEY}`)
       .then(res => res.json())
       .then(data => setSimilar(data.results?.slice(0, 12) || []));
@@ -293,12 +291,10 @@ function SearchPage() {
   );
 }
 
-// --- LANDING PAGE (FULL UNABRIDGED VERSION) ---
+// --- LANDING PAGE ---
 function Landing() {
   const { user } = useAuth();
   const [trending, setTrending] = useState([]);
-
-  if (user) return <Navigate to="/home" replace />;
 
   useEffect(() => {
     fetch(`${base}/trending/all/week?api_key=${API_KEY}`)
@@ -306,9 +302,10 @@ function Landing() {
       .then(data => setTrending(data.results?.slice(0, 10) || []));
   }, []);
 
+  if (user) return <Navigate to="/home" replace />;
+
   return (
     <div className="bg-black text-white font-sans">
-      {/* Hero Section */}
       <div className="relative min-h-screen flex flex-col justify-center items-center text-center px-4 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img
@@ -335,7 +332,6 @@ function Landing() {
         </div>
       </div>
 
-      {/* Trending Section */}
       <div className="py-24 px-8 bg-black border-t border-white/5">
         <div className="max-w-7xl mx-auto">
           <h2 className="text-4xl font-black mb-12 flex items-center gap-4">
@@ -362,7 +358,6 @@ function Landing() {
         </div>
       </div>
 
-      {/* Features Section */}
       <div className="py-24 px-8 bg-zinc-950 border-y border-white/5">
         <div className="max-w-7xl mx-auto text-center mb-20">
           <h2 className="text-5xl font-black mb-4">MORE REASONS TO JOIN</h2>
@@ -398,379 +393,304 @@ function Landing() {
             <p className="text-gray-400">Send kids on adventures with their favorite characters in a space made just for them.</p>
           </div>
         </div>
+      </div>
+
+      <div className="py-24 px-8 bg-black">
+        <h2 className="text-5xl font-black mb-16 text-center tracking-tighter uppercase">Frequently Asked Questions</h2>
+        <div className="max-w-4xl mx-auto space-y-6">
+          <details className="group bg-zinc-900 rounded-2xl border border-white/5 overflow-hidden transition-all duration-300">
+            <summary className="flex items-center justify-between p-8 text-2xl font-bold cursor-pointer list-none hover:bg-zinc-800 transition">
+              What is PrimeScene?
+              <Plus className="group-open:rotate-45 transition-transform" />
+            </summary>
+            <div className="p-8 pt-0 text-xl text-gray-400 border-t border-white/5 leading-relaxed">
+              PrimeScene is a premier streaming service designed for global audiences. We host a massive collection of Nollywood blockbusters, African originals, Hollywood hits, Anime, and more.
+            </div>
+          </details>
+          <details className="group bg-zinc-900 rounded-2xl border border-white/5 overflow-hidden transition-all duration-300">
+            <summary className="flex items-center justify-between p-8 text-2xl font-bold cursor-pointer list-none hover:bg-zinc-800 transition">
+              How much does PrimeScene cost?
+              <Plus className="group-open:rotate-45 transition-transform" />
+            </summary>
+            <div className="p-8 pt-0 text-xl text-gray-400 border-t border-white/5 leading-relaxed">
+              Watch PrimeScene on your smartphone, tablet, Smart TV, laptop, or streaming device, all for one fixed monthly fee. Plans range from ₦1,200 to ₦4,400 a month. No extra costs, no contracts.
+            </div>
+          </details>
+          <details className="group bg-zinc-900 rounded-2xl border border-white/5 overflow-hidden transition-all duration-300">
+            <summary className="flex items-center justify-between p-8 text-2xl font-bold cursor-pointer list-none hover:bg-zinc-800 transition">
+              Is it good for kids?
+              <Plus className="group-open:rotate-45 transition-transform" />
+            </summary>
+            <div className="p-8 pt-0 text-xl text-gray-400 border-t border-white/5 leading-relaxed">
+              Absolutely. The PrimeScene Kids experience is included in your membership to give parents control while kids enjoy family-friendly TV shows and movies in their own space.
+            </div>
+          </details>
         </div>
+        <div className="text-center mt-20">
+          <Link to="/login" className="px-12 py-5 bg-red-600 text-white text-2xl font-black rounded hover:bg-red-700 transition shadow-2xl">JOIN THE SCENE</Link>
+        </div>
+      </div>
 
-{/* FAQ Section */}
-<div className="py-24 px-8 bg-black">
-  <h2 className="text-5xl font-black mb-16 text-center tracking-tighter uppercase">Frequently Asked Questions</h2>
-  <div className="max-w-4xl mx-auto space-y-6">
-    <details className="group bg-zinc-900 rounded-2xl border border-white/5 overflow-hidden transition-all duration-300">
-      <summary className="flex items-center justify-between p-8 text-2xl font-bold cursor-pointer list-none hover:bg-zinc-800 transition">
-        What is PrimeScene?
-        <Plus className="group-open:rotate-45 transition-transform" />
-      </summary>
-      <div className="p-8 pt-0 text-xl text-gray-400 border-t border-white/5 leading-relaxed">
-        PrimeScene is a premier streaming service designed for global audiences. We host a massive collection of Nollywood blockbusters, African originals, Hollywood hits, Anime, and more.
-      </div>
-    </details>
-    <details className="group bg-zinc-900 rounded-2xl border border-white/5 overflow-hidden transition-all duration-300">
-      <summary className="flex items-center justify-between p-8 text-2xl font-bold cursor-pointer list-none hover:bg-zinc-800 transition">
-        How much does PrimeScene cost?
-        <Plus className="group-open:rotate-45 transition-transform" />
-      </summary>
-      <div className="p-8 pt-0 text-xl text-gray-400 border-t border-white/5 leading-relaxed">
-        Watch PrimeScene on your smartphone, tablet, Smart TV, laptop, or streaming device, all for one fixed monthly fee. Plans range from ₦1,200 to ₦4,400 a month. No extra costs, no contracts.
-      </div>
-    </details>
-    <details className="group bg-zinc-900 rounded-2xl border border-white/5 overflow-hidden transition-all duration-300">
-      <summary className="flex items-center justify-between p-8 text-2xl font-bold cursor-pointer list-none hover:bg-zinc-800 transition">
-        Is it good for kids?
-        <Plus className="group-open:rotate-45 transition-transform" />
-      </summary>
-      <div className="p-8 pt-0 text-xl text-gray-400 border-t border-white/5 leading-relaxed">
-        Absolutely. The PrimeScene Kids experience is included in your membership to give parents control while kids enjoy family-friendly TV shows and movies in their own space.
-      </div>
-    </details>
-  </div>
-  <div className="text-center mt-20">
-    <Link to="/login" className="px-12 py-5 bg-red-600 text-white text-2xl font-black rounded hover:bg-red-700 transition shadow-2xl">JOIN THE SCENE</Link>
-  </div>
-</div>
-
-{/* Full Footer */}
-<footer className="bg-black border-t border-zinc-800 py-24 px-8 text-zinc-500">
-  <div className="max-w-6xl mx-auto">
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-20">
-      <div className="space-y-4">
-        <h4 className="text-white font-bold mb-6">Company</h4>
-        <a href="#" className="block hover:underline text-sm">FAQ</a>
-        <a href="#" className="block hover:underline text-sm">Investor Relations</a>
-        <a href="#" className="block hover:underline text-sm">Privacy</a>
-        <a href="#" className="block hover:underline text-sm">Speed Test</a>
-      </div>
-      <div className="space-y-4">
-        <h4 className="text-white font-bold mb-6">Help</h4>
-        <a href="#" className="block hover:underline text-sm">Help Center</a>
-        <a href="#" className="block hover:underline text-sm">Jobs</a>
-        <a href="#" className="block hover:underline text-sm">Cookie Preferences</a>
-        <a href="#" className="block hover:underline text-sm">Legal Notices</a>
-      </div>
-      <div className="space-y-4">
-        <h4 className="text-white font-bold mb-6">Account</h4>
-        <a href="#" className="block hover:underline text-sm">Ways to Watch</a>
-        <a href="#" className="block hover:underline text-sm">Terms of Use</a>
-        <a href="#" className="block hover:underline text-sm">Contact Us</a>
-        <a href="#" className="block hover:underline text-sm">PrimeScene Originals</a>
-      </div>
-      <div className="space-y-4">
-        <h4 className="text-white font-bold mb-6">Social</h4>
-        <a href="#" className="block hover:underline text-sm">Facebook</a>
-        <a href="#" className="block hover:underline text-sm">Instagram</a>
-        <a href="#" className="block hover:underline text-sm">Twitter (X)</a>
-        <a href="#" className="block hover:underline text-sm">YouTube</a>
-      </div>
+      <footer className="bg-black border-t border-zinc-800 py-24 px-8 text-zinc-500">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-20">
+            <div className="space-y-4">
+              <h4 className="text-white font-bold mb-6">Company</h4>
+              <a href="#" className="block hover:underline text-sm">FAQ</a>
+              <a href="#" className="block hover:underline text-sm">Investor Relations</a>
+              <a href="#" className="block hover:underline text-sm">Privacy</a>
+              <a href="#" className="block hover:underline text-sm">Speed Test</a>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-white font-bold mb-6">Help</h4>
+              <a href="#" className="block hover:underline text-sm">Help Center</a>
+              <a href="#" className="block hover:underline text-sm">Jobs</a>
+              <a href="#" className="block hover:underline text-sm">Cookie Preferences</a>
+              <a href="#" className="block hover:underline text-sm">Legal Notices</a>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-white font-bold mb-6">Account</h4>
+              <a href="#" className="block hover:underline text-sm">Ways to Watch</a>
+              <a href="#" className="block hover:underline text-sm">Terms of Use</a>
+              <a href="#" className="block hover:underline text-sm">Contact Us</a>
+              <a href="#" className="block hover:underline text-sm">PrimeScene Originals</a>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-white font-bold mb-6">Social</h4>
+              <a href="#" className="block hover:underline text-sm">Facebook</a>
+              <a href="#" className="block hover:underline text-sm">Instagram</a>
+              <a href="#" className="block hover:underline text-sm">Twitter (X)</a>
+              <a href="#" className="block hover:underline text-sm">YouTube</a>
+            </div>
+          </div>
+          <div className="border-t border-white/5 pt-12 text-center">
+            <p className="text-lg mb-4">PrimeScene Nigeria / West Africa</p>
+            <p className="text-xs uppercase tracking-widest font-black">
+              Developed by <span className="text-red-600">QodecTech</span> &copy; 2025. All Rights Reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
     </div>
-    <div className="border-t border-white/5 pt-12 text-center">
-      <p className="text-lg mb-4">PrimeScene Nigeria / West Africa</p>
-      <p className="text-xs uppercase tracking-widest font-black">
-        Developed by <span className="text-red-600">QodecTech</span> &copy; 2025. All Rights Reserved.
-      </p>
-    </div>
-  </div>
-</footer>
-</div>
-);
+  );
 }
 
 function ProtectedRoute({ children }) {
-const { user, loading } = useAuth();
-if (loading) return (
-<div className="min-h-screen bg-black text-white flex flex-col items-center justify-center">
-<div className="animate-spin rounded-full h-16 w-16 border-t-2 border-red-600 mb-4"></div>
-<p className="text-3xl font-black animate-pulse">PRIME SCENE</p>
-</div>
-);
-return user ? children : <Navigate to="/" replace />;
+  const { user, loading } = useAuth();
+  if (loading) return (
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center">
+      <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-red-600 mb-4"></div>
+      <p className="text-3xl font-black animate-pulse">PRIME SCENE</p>
+    </div>
+  );
+  return user ? children : <Navigate to="/" replace />;
 }
 
-// --- HOME PAGE (EXPANDED TO 20+ ROWS + DYNAMIC FILTERS) ---
+// --- HOME PAGE ---
 function Home() {
-const [selectedMovie, setSelectedMovie] = useState(null);
-const [selectedGenre, setSelectedGenre] = useState("All");
-const [modalOpen, setModalOpen] = useState(false);
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [selectedGenre, setSelectedGenre] = useState("All");
+  const [modalOpen, setModalOpen] = useState(false);
+  const [genreMovies, setGenreMovies] = useState([]);
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
-// Modal Handlers
-const openModal = (movie) => { setSelectedMovie(movie); setModalOpen(true); };
-const closeModal = () => { setSelectedMovie(null); setModalOpen(false); };
+  const openModal = (movie) => { setSelectedMovie(movie); setModalOpen(true); };
+  const closeModal = () => { setSelectedMovie(null); setModalOpen(false); };
 
-// New states for Load More functionality
-const [genreMovies, setGenreMovies] = useState([]);
-const [page, setPage] = useState(1);
-const [isLoading, setIsLoading] = useState(false);
-const [hasMore, setHasMore] = useState(true);
+  const genreMap = {
+    "Horror": "27", "Romantic": "10749", "Action": "28", "Comedy": "35",
+    "Sci-Fi": "878", "Documentary": "99", "Mystery": "9648", "Crime": "80"
+  };
 
-const genreMap = {
-"Horror": "27",
-"Romantic": "10749",
-"Action": "28",
-"Comedy": "35",
-"Sci-Fi": "878",
-"Documentary": "99",
-"Mystery": "9648",
-"Crime": "80"
-};
+  const fetchGenreData = async (pageNum, isNewGenre = false) => {
+    setIsLoading(true);
+    let url = selectedGenre === "African" 
+      ? `${base}/discover/movie?api_key=${API_KEY}&with_original_language=en|ha|ig|yo&region=NG&page=${pageNum}`
+      : `${base}/discover/movie?api_key=${API_KEY}&with_genres=${genreMap[selectedGenre]}&page=${pageNum}`;
+  
+    try {
+      const res = await fetch(url);
+      const data = await res.json();
+      setGenreMovies(prev => isNewGenre ? data.results : [...prev, ...data.results]);
+      setHasMore(data.page < data.total_pages);
+    } catch (err) { console.error(err); } finally { setIsLoading(false); }
+  };
 
-const fetchGenreData = async (pageNum, isNewGenre = false) => {
-setIsLoading(true);
-let url = "";
+  useEffect(() => {
+    if (selectedGenre !== "All") {
+      setPage(1);
+      fetchGenreData(1, true);
+    }
+  }, [selectedGenre]);
+  
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchGenreData(nextPage);
+  };
 
-if (selectedGenre === "African") {
-url = `${base}/discover/movie?api_key=${API_KEY}&with_original_language=en|ha|ig|yo&region=NG&page=${pageNum}`;
-} else {
-url = `${base}/discover/movie?api_key=${API_KEY}&with_genres=${genreMap[selectedGenre]}&page=${pageNum}`;
-}
+  return (
+    <ProtectedRoute>
+      <div className="bg-black min-h-screen">
+        <Banner onPlay={openModal} onInfo={openModal} />
+        <GenreBar activeGenre={selectedGenre} onGenreSelect={setSelectedGenre} />
 
-try {
-const res = await fetch(url);
-const data = await res.json();
-setGenreMovies(prev => isNewGenre ? data.results : [...prev, ...data.results]);
-setHasMore(data.page < data.total_pages);
-} catch (err) {
-console.error("Error fetching more movies:", err);
-} finally {
-setIsLoading(false);
-}
-};
+        <div className="pb-32 px-4 sm:px-6 lg:px-16 space-y-16">
+          {selectedGenre === "All" && (
+            <div className="mt-8">
+              <Row title="African Cinema Highlights" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_original_language=en|fr|ha|ig|yo&region=NG|ZA|KE`} onCardClick={openModal} isLargeRow />
+              <Row title="Trending Worldwide" fetchUrl={`${base}/trending/all/week?api_key=${API_KEY}`} onCardClick={openModal} />
+              <Row title="Top Rated Masterpieces" fetchUrl={`${base}/movie/top_rated?api_key=${API_KEY}`} onCardClick={openModal} />
+              <Row title="Horror: Creatures & Supernatural" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=27`} onCardClick={openModal} />
+              <Row title="Romance: Heartfelt Stories" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=10749`} onCardClick={openModal} />
+              <Row title="Action: High Octane" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=28`} onCardClick={openModal} />
+              <Row title="Sci-Fi & Cyberpunk" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=878`} onCardClick={openModal} />
+              <Row title="Currently Popular" fetchUrl={`${base}/movie/popular?api_key=${API_KEY}`} onCardClick={openModal} />
+              <Row title="Laughter: Comedy Hits" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=35`} onCardClick={openModal} />
+              <Row title="Mystery & Puzzles" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=9648`} onCardClick={openModal} />
+              <Row title="Crime: Heists & Underworld" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=80`} onCardClick={openModal} />
+              <Row title="Family Movie Night" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=10751`} onCardClick={openModal} />
+              <Row title="Anime & Animation" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=16`} onCardClick={openModal} />
+              <Row title="Global Documentaries" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=99`} onCardClick={openModal} />
+              <Row title="War & Heroism" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=10752`} onCardClick={openModal} />
+              <Row title="Fantasy & Magic" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=14`} onCardClick={openModal} />
+              <Row title="Music & Stage" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=10402`} onCardClick={openModal} />
+              <Row title="Now in Theaters" fetchUrl={`${base}/movie/now_playing?api_key=${API_KEY}`} onCardClick={openModal} />
+              <Row title="Prime TV Series" fetchUrl={`${base}/tv/popular?api_key=${API_KEY}`} onCardClick={openModal} />
+              <Row title="Deep Dramas" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=18`} onCardClick={openModal} />
+              <Row title="Adventure & Exploration" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=12`} onCardClick={openModal} />
+              <Row title="History: Past Untold" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=36`} onCardClick={openModal} />
+            </div>
+          )}
 
-// Trigger fetch on Genre Change
-useEffect(() => {
-if (selectedGenre !== "All") {
-setPage(1);
-fetchGenreData(1, true);
-}
-}, [selectedGenre]);
+          {selectedGenre === "African" && (
+            <div className="pt-10 space-y-16">
+              <div className="border-l-8 border-red-600 pl-6 mb-12">
+                <h1 className="text-5xl font-black tracking-tight">AFRICAN CINEMA</h1>
+                <p className="text-gray-500 text-xl mt-2">Authentic stories from Nigeria, South Africa, and beyond.</p>
+              </div>
+              <Row title="Nollywood: Nigeria's Best" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_original_language=en|ha|ig|yo&region=NG`} onCardClick={openModal} isLargeRow />
+              <Row title="South African Feature Films" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&region=ZA`} onCardClick={openModal} />
+              <Row title="East African & Kenyan Scene" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&region=KE`} onCardClick={openModal} />
+              <Row title="North African & Egyptian Cinema" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&region=EG`} onCardClick={openModal} />
+              <Row title="Ghollywood Hits (Ghana)" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&region=GH`} onCardClick={openModal} />
+            </div>
+          )}
 
-const loadMore = () => {
-const nextPage = page + 1;
-setPage(nextPage);
-fetchGenreData(nextPage);
-};
+          {selectedGenre === "Horror" && (
+            <div className="pt-10 space-y-16">
+              <div className="border-l-8 border-red-600 pl-6 mb-12">
+                <h1 className="text-5xl font-black tracking-tight">PURE HORROR</h1>
+                <p className="text-gray-500 text-xl mt-2">Enter at your own risk. Slasher, Supernatural, and More.</p>
+              </div>
+              <Row title="Supernatural & Haunted" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=27&sort_by=popularity.desc`} onCardClick={openModal} isLargeRow />
+              <Row title="Slasher & Gore" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=27&with_keywords=slasher`} onCardClick={openModal} />
+              <Row title="Horror Comedy" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=27,35`} onCardClick={openModal} />
+              <Row title="Sci-Fi Horror" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=27,878`} onCardClick={openModal} />
+            </div>
+          )}
 
-return (
-<ProtectedRoute>
-<div className="bg-black min-h-screen">
-  <Banner onPlay={openModal} onInfo={openModal} />
-  <GenreBar activeGenre={selectedGenre} onGenreSelect={setSelectedGenre} />
-
-  <div className="pb-32 px-4 sm:px-6 lg:px-16 space-y-16">
-
-    {/* SCENARIO 1: THE "ALL" DASHBOARD (20+ CATEGORIES) */}
-    {selectedGenre === "All" && (
-      <div className="mt-8">
-        <Row title="African Cinema Highlights" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_original_language=en|fr|ha|ig|yo&region=NG|ZA|KE`} onCardClick={openModal} isLargeRow />
-        <Row title="Trending Worldwide" fetchUrl={`${base}/trending/all/week?api_key=${API_KEY}`} onCardClick={openModal} />
-        <Row title="Top Rated Masterpieces" fetchUrl={`${base}/movie/top_rated?api_key=${API_KEY}`} onCardClick={openModal} />
-        <Row title="Horror: Creatures & Supernatural" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=27`} onCardClick={openModal} />
-        <Row title="Romance: Heartfelt Stories" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=10749`} onCardClick={openModal} />
-        <Row title="Action: High Octane" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=28`} onCardClick={openModal} />
-        <Row title="Sci-Fi & Cyberpunk" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=878`} onCardClick={openModal} />
-        <Row title="Currently Popular" fetchUrl={`${base}/movie/popular?api_key=${API_KEY}`} onCardClick={openModal} />
-        <Row title="Laughter: Comedy Hits" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=35`} onCardClick={openModal} />
-        <Row title="Mystery & Puzzles" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=9648`} onCardClick={openModal} />
-        <Row title="Crime: Heists & Underworld" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=80`} onCardClick={openModal} />
-        <Row title="Family Movie Night" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=10751`} onCardClick={openModal} />
-        <Row title="Anime & Animation" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=16`} onCardClick={openModal} />
-        <Row title="Global Documentaries" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=99`} onCardClick={openModal} />
-        <Row title="War & Heroism" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=10752`} onCardClick={openModal} />
-        <Row title="Fantasy & Magic" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=14`} onCardClick={openModal} />
-        <Row title="Music & Stage" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=10402`} onCardClick={openModal} />
-        <Row title="Now in Theaters" fetchUrl={`${base}/movie/now_playing?api_key=${API_KEY}`} onCardClick={openModal} />
-        <Row title="Prime TV Series" fetchUrl={`${base}/tv/popular?api_key=${API_KEY}`} onCardClick={openModal} />
-        <Row title="Deep Dramas" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=18`} onCardClick={openModal} />
-        <Row title="Adventure & Exploration" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=12`} onCardClick={openModal} />
-        <Row title="History: Past Untold" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=36`} onCardClick={openModal} />
-      </div>
-    )}
-
-    {/* SCENARIO 2: AFRICAN CINEMA (DETAILED ROWS) */}
-    {selectedGenre === "African" && (
-      <div className="pt-10 space-y-16">
-        <div className="border-l-8 border-red-600 pl-6 mb-12">
-          <h1 className="text-5xl font-black tracking-tight">AFRICAN CINEMA</h1>
-          <p className="text-gray-500 text-xl mt-2">Authentic stories from Nigeria, South Africa, and beyond.</p>
+          {selectedGenre !== "All" && (
+            <div className="pt-10 space-y-12">
+              {selectedGenre !== "African" && selectedGenre !== "Horror" && (
+                <div className="border-l-8 border-red-600 pl-6 mb-12">
+                  <h1 className="text-5xl font-black tracking-tight uppercase">{selectedGenre} COLLECTION</h1>
+                  <p className="text-gray-500 text-xl mt-2">The best of {selectedGenre} curated specifically for you.</p>
+                </div>
+              )}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8">
+                {genreMovies.map(movie => <MovieCard key={`${movie.id}-${Math.random()}`} movie={movie} onClick={openModal} />)}
+              </div>
+              {hasMore && (
+                <div className="flex justify-center pt-10">
+                  <button onClick={loadMore} disabled={isLoading} className="px-16 py-4 bg-white text-black text-xl font-black rounded-full hover:bg-red-600 hover:text-white transition-all transform hover:scale-105 disabled:opacity-50">
+                    {isLoading ? "LOADING MORE..." : "EXPLORE MORE TITLES"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-        <Row title="Nollywood: Nigeria's Best" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_original_language=en|ha|ig|yo&region=NG`} onCardClick={openModal} isLargeRow />
-        <Row title="South African Feature Films" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&region=ZA`} onCardClick={openModal} />
-        <Row title="East African & Kenyan Scene" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&region=KE`} onCardClick={openModal} />
-        <Row title="North African & Egyptian Cinema" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&region=EG`} onCardClick={openModal} />
-        <Row title="Ghollywood Hits (Ghana)" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&region=GH`} onCardClick={openModal} />
+        <Modal isOpen={modalOpen} onClose={closeModal}>{selectedMovie && <MovieDetail movie={selectedMovie} />}</Modal>
       </div>
-    )}
+    </ProtectedRoute>
+  );
+}
 
-    {/* SCENARIO 3: HORROR COLLECTIONS */}
-    {selectedGenre === "Horror" && (
-      <div className="pt-10 space-y-16">
-        <div className="border-l-8 border-red-600 pl-6 mb-12">
-          <h1 className="text-5xl font-black tracking-tight">PURE HORROR</h1>
-          <p className="text-gray-500 text-xl mt-2">Enter at your own risk. Slasher, Supernatural, and More.</p>
-        </div>
-        <Row title="Supernatural & Haunted" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=27&sort_by=popularity.desc`} onCardClick={openModal} isLargeRow />
-        <Row title="Slasher & Gore" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=27&with_keywords=slasher`} onCardClick={openModal} />
-        <Row title="Horror Comedy" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=27,35`} onCardClick={openModal} />
-        <Row title="Sci-Fi Horror" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=27,878`} onCardClick={openModal} />
-      </div>
-    )}
+// --- MY LIST PAGE ---
+function MyListPage() {
+  const { myList } = useMyList();
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const openModal = (m) => { setSelectedMovie(m); setModalOpen(true); };
 
-    {/* SCENARIO 4: OTHER SPECIFIC GENRES + GRID WITH LOAD MORE */}
-    {selectedGenre !== "All" && (
-      <div className="pt-10 space-y-12">
-        {selectedGenre !== "African" && selectedGenre !== "Horror" && (
-          <div className="border-l-8 border-red-600 pl-6 mb-12">
-            <h1 className="text-5xl font-black tracking-tight uppercase">{selectedGenre} COLLECTION</h1>
-            <p className="text-gray-500 text-xl mt-2">The best of {selectedGenre} curated specifically for you.</p>
+  return (
+    <ProtectedRoute>
+      <div className="pt-32 pb-20 px-4 sm:px-16 min-h-screen bg-black">
+        <h1 className="text-5xl font-black text-white mb-12 flex items-center gap-4">
+          MY CINEMA LIST <span className="text-red-600 bg-red-600/10 px-4 py-1 rounded-full text-2xl">{myList.length}</span>
+        </h1>
+        {myList.length === 0 ? (
+          <div className="text-center py-40 bg-zinc-900/50 rounded-3xl border border-white/5">
+            <Plus size={80} className="mx-auto text-gray-700 mb-6" />
+            <p className="text-3xl font-bold text-gray-500">Your list is currently empty.</p>
+            <Link to="/home" className="mt-8 inline-block px-10 py-3 bg-red-600 rounded-full font-bold">Start Exploring</Link>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8">
+            {myList.map(movie => (<MovieCard key={movie.id} movie={movie} onClick={openModal} />))}
           </div>
         )}
-        
-        {/* The Dynamic Grid for Infinite Loading */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8">
-          {genreMovies.map(movie => (
-            <MovieCard key={`${movie.id}-${Math.random()}`} movie={movie} onClick={openModal} />
+        <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>{selectedMovie && <MovieDetail movie={selectedMovie} />}</Modal>
+      </div>
+    </ProtectedRoute>
+  );
+}
+
+// --- CATEGORY PAGE ---
+function CategoryPage({ title, rows }) {
+  const [selectedMovie, setSelectedMovie] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const openModal = (m) => { setSelectedMovie(m); setModalOpen(true); };
+
+  return (
+    <ProtectedRoute>
+      <div className="pt-32 pb-20 px-4 sm:px-16 min-h-screen bg-black">
+        <h1 className="text-5xl font-black text-white mb-16 tracking-tighter uppercase">{title}</h1>
+        <div className="space-y-20">
+          {rows.map((row, index) => (
+            <Row key={index} title={row.title} fetchUrl={row.fetchUrl} onCardClick={openModal} isLargeRow={index === 0} />
           ))}
         </div>
-
-        {/* The Load More Button UI */}
-        {hasMore && (
-          <div className="flex justify-center pt-10">
-            <button 
-              onClick={loadMore}
-              disabled={isLoading}
-              className="px-16 py-4 bg-white text-black text-xl font-black rounded-full hover:bg-red-600 hover:text-white transition-all transform hover:scale-105 disabled:opacity-50"
-            >
-              {isLoading ? "LOADING MORE..." : "EXPLORE MORE TITLES"}
-            </button>
-          </div>
-        )}
+        <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>{selectedMovie && <MovieDetail movie={selectedMovie} />}</Modal>
       </div>
-    )}
-  </div>
-
-  <Modal isOpen={modalOpen} onClose={closeModal}>
-    {selectedMovie && <MovieDetail movie={selectedMovie} />}
-  </Modal>
-</div>
-</ProtectedRoute>
-);
+    </ProtectedRoute>
+  );
 }
 
-// --- MY LIST PAGE (FULL) ---
-function MyListPage() {
-const { myList } = useMyList();
-const [selectedMovie, setSelectedMovie] = useState(null);
-const [modalOpen, setModalOpen] = useState(false);
-const openModal = (m) => { setSelectedMovie(m); setModalOpen(true); };
-
-return (
-<ProtectedRoute>
-<div className="pt-32 pb-20 px-4 sm:px-16 min-h-screen bg-black">
-  <h1 className="text-5xl font-black text-white mb-12 flex items-center gap-4">
-    MY CINEMA LIST <span className="text-red-600 bg-red-600/10 px-4 py-1 rounded-full text-2xl">{myList.length}</span>
-  </h1>
-  {myList.length === 0 ? (
-    <div className="text-center py-40 bg-zinc-900/50 rounded-3xl border border-white/5">
-      <Plus size={80} className="mx-auto text-gray-700 mb-6" />
-      <p className="text-3xl font-bold text-gray-500">Your list is currently empty.</p>
-      <Link to="/home" className="mt-8 inline-block px-10 py-3 bg-red-600 rounded-full font-bold">Start Exploring</Link>
-    </div>
-  ) : (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-8">
-      {myList.map(movie => (<MovieCard key={movie.id} movie={movie} onClick={openModal} />))}
-    </div>
-  )}
-  <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>{selectedMovie && <MovieDetail movie={selectedMovie} />}</Modal>
-</div>
-</ProtectedRoute>
-);
-}
-
-// --- CATEGORY PAGE (FULL) ---
-function CategoryPage({ title, rows }) {
-const [selectedMovie, setSelectedMovie] = useState(null);
-const [modalOpen, setModalOpen] = useState(false);
-const openModal = (m) => { setSelectedMovie(m); setModalOpen(true); };
-
-return (
-<ProtectedRoute>
-<div className="pt-32 pb-20 px-4 sm:px-16 min-h-screen bg-black">
-  <h1 className="text-5xl font-black text-white mb-16 tracking-tighter uppercase">{title}</h1>
-  <div className="space-y-20">
-    {rows.map((row, index) => (
-      <Row key={index} title={row.title} fetchUrl={row.fetchUrl} onCardClick={openModal} isLargeRow={index === 0} />
-    ))}
-  </div>
-  <Modal isOpen={modalOpen} onClose={() => setModalOpen(false)}>{selectedMovie && <MovieDetail movie={selectedMovie} />}</Modal>
-</div>
-</ProtectedRoute>
-);
-}
-
-// --- MAIN APP ROUTING (FULL) ---
+// --- MAIN APP ---
 function App() {
-return (
-<div className="bg-black text-white min-h-screen selection:bg-red-600 selection:text-white">
-<Navbar />
-<Routes>
-  <Route path="/watch/:type/:id" element={<PlayerPage />} />
-  <Route path="/details/:type/:id" element={<MovieDetailPage />} />
-  <Route path="/login" element={<Login />} />
-  <Route path="/" element={<Landing />} />
-  <Route path="/home" element={<Home />} />
-  <Route path="/search" element={<SearchPage />} />
-
-  {/* Category Routes */}
-  <Route path="/tv-shows" element={
-    <CategoryPage title="TV Series" rows={[
-      { title: "Trending TV Shows", fetchUrl: `${base}/trending/tv/week?api_key=${API_KEY}` },
-      { title: "Popular Global Hits", fetchUrl: `${base}/tv/popular?api_key=${API_KEY}` },
-      { title: "Top Rated Classics", fetchUrl: `${base}/tv/top_rated?api_key=${API_KEY}` },
-      { title: "Sci-Fi & Fantasy Series", fetchUrl: `${base}/discover/tv?api_key=${API_KEY}&with_genres=10765` }
-    ]} />
-  } />
-
-  <Route path="/movies" element={
-    <CategoryPage title="Feature Films" rows={[
-      { title: "Now Playing In Nigeria", fetchUrl: `${base}/movie/now_playing?api_key=${API_KEY}&region=NG` },
-      { title: "Most Popular Right Now", fetchUrl: `${base}/movie/popular?api_key=${API_KEY}` },
-      { title: "Upcoming Blockbusters", fetchUrl: `${base}/movie/upcoming?api_key=${API_KEY}` },
-      { title: "Historical Masterpieces", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=36` }
-    ]} />
-  } />
-
-  <Route path="/animation" element={
-    <CategoryPage title="Animation & Anime" rows={[
-      { title: "Must Watch Anime", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=16&with_original_language=ja` },
-      { title: "Family Animation", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=16,10751` },
-      { title: "Adult Animation", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=16&certification_country=US&certification=R` }
-    ]} />
-  } />
-
-  <Route path="/novels" element={
-    <CategoryPage title="Novels & Dramas" rows={[
-      { title: "Book-to-Movie Adaptations", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_keywords=818` },
-      { title: "Heavy Dramas", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=18` }
-    ]} />
-  } />
-
-  <Route path="/most-watched" element={
-    <CategoryPage title="All-Time Most Watched" rows={[
-      { title: "Box Office Legends", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&sort_by=revenue.desc` },
-      { title: "Trending This Month", fetchUrl: `${base}/trending/all/day?api_key=${API_KEY}` }
-    ]} />
-  } />
-
-  <Route path="/my-list" element={<MyListPage />} />
-</Routes>
-</div>
-);
+  return (
+    <div className="bg-black text-white min-h-screen selection:bg-red-600 selection:text-white">
+      <Navbar />
+      <Routes>
+        <Route path="/watch/:type/:id" element={<PlayerPage />} />
+        <Route path="/details/:type/:id" element={<MovieDetailPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Landing />} />
+        <Route path="/home" element={<Home />} />
+        <Route path="/search" element={<SearchPage />} />
+        <Route path="/tv-shows" element={<CategoryPage title="TV Series" rows={[{ title: "Trending TV Shows", fetchUrl: `${base}/trending/tv/week?api_key=${API_KEY}` }, { title: "Popular Global Hits", fetchUrl: `${base}/tv/popular?api_key=${API_KEY}` }, { title: "Top Rated Classics", fetchUrl: `${base}/tv/top_rated?api_key=${API_KEY}` }, { title: "Sci-Fi & Fantasy Series", fetchUrl: `${base}/discover/tv?api_key=${API_KEY}&with_genres=10765` }]} />} />
+        <Route path="/movies" element={<CategoryPage title="Feature Films" rows={[{ title: "Now Playing In Nigeria", fetchUrl: `${base}/movie/now_playing?api_key=${API_KEY}&region=NG` }, { title: "Most Popular Right Now", fetchUrl: `${base}/movie/popular?api_key=${API_KEY}` }, { title: "Upcoming Blockbusters", fetchUrl: `${base}/movie/upcoming?api_key=${API_KEY}` }, { title: "Historical Masterpieces", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=36` }]} />} />
+        <Route path="/animation" element={<CategoryPage title="Animation & Anime" rows={[{ title: "Must Watch Anime", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=16&with_original_language=ja` }, { title: "Family Animation", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=16,10751` }, { title: "Adult Animation", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=16&certification_country=US&certification=R` }]} />} />
+        <Route path="/novels" element={<CategoryPage title="Novels & Dramas" rows={[{ title: "Book-to-Movie Adaptations", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_keywords=818` }, { title: "Heavy Dramas", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=18` }]} />} />
+        <Route path="/most-watched" element={<CategoryPage title="All-Time Most Watched" rows={[{ title: "Box Office Legends", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&sort_by=revenue.desc` }, { title: "Trending This Month", fetchUrl: `${base}/trending/all/day?api_key=${API_KEY}` }]} />} />
+        <Route path="/my-list" element={<MyListPage />} />
+      </Routes>
+    </div>
+  );
 }
 
 export default App;
