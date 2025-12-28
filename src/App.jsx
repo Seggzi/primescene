@@ -12,7 +12,7 @@ import { useAuth } from './context/AuthContext';
 import { useMyList } from './context/MyListContext';
 
 // --- ADDED IMPORTS ---
-import MovieDetailPage from './pages/MovieDetailPage'; 
+import MovieDetailPage from './pages/MovieDetailPage';
 import PlayerPage from './pages/PlayerPage';
 
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
@@ -31,8 +31,8 @@ function GenreBar({ activeGenre, onGenreSelect }) {
           key={genre}
           onClick={() => onGenreSelect(genre)}
           className={`px-6 py-1.5 border rounded-full transition text-sm font-semibold whitespace-nowrap ${activeGenre === genre
-              ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]'
-              : 'border-white/30 text-white hover:bg-white/10 hover:border-white'
+            ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]'
+            : 'border-white/30 text-white hover:bg-white/10 hover:border-white'
             }`}
         >
           {genre}
@@ -117,7 +117,7 @@ function Landing() {
     <div className="bg-black text-white">
       <div className="relative min-h-screen flex flex-col justify-center items-center text-center px-4">
         <div className="absolute inset-0">
-          <img 
+          <img
             src="https://files.catbox.moe/843del.png"
             alt="Hero Background"
             className="w-full h-full object-cover"
@@ -137,7 +137,7 @@ function Landing() {
             Ready to watch? Sign in to access your personal cinema.
           </p>
 
-          <Link 
+          <Link
             to="/login"
             className="inline-block px-8 py-4 bg-red-600 text-white text-lg sm:text-xl font-bold rounded hover:bg-red-700 transition"
           >
@@ -154,7 +154,7 @@ function Landing() {
               <div className="absolute inset-0 flex items-center justify-center text-4xl font-bold text-white z-10 drop-shadow-2xl">
                 {index + 1}
               </div>
-              <img 
+              <img
                 src={item.poster_path ? `https://image.tmdb.org/t/p/w342${item.poster_path}` : 'https://via.placeholder.com/342x513?text=No+Image'}
                 alt={item.title || item.name}
                 className="w-full rounded-lg shadow-lg"
@@ -240,7 +240,7 @@ function Landing() {
         </div>
 
         <div className="text-center mt-12">
-          <Link 
+          <Link
             to="/login"
             className="inline-block px-8 py-4 bg-red-600 text-white text-lg font-bold rounded hover:bg-red-700 transition"
           >
@@ -381,7 +381,24 @@ function Home() {
           {/* === ALL GENRE: Your Original 31 Rows === */}
           {selectedGenre === "All" && (
             <>
+              {/* Dynamic Top 10 Movies (changes weekly) */}
+              <Row
+                title="Top 10 Movies This Week"
+                fetchUrl={`${base}/trending/movie/week?api_key=${API_KEY}`}
+                onCardClick={openModal}
+                isNumbered={true}  // Add this prop to show 1-10 numbers
+              />
+
+              {/* Dynamic Top 10 TV Shows (changes weekly) */}
+              <Row
+                title="Top 10 TV Shows This Week"
+                fetchUrl={`${base}/trending/tv/week?api_key=${API_KEY}`}
+                onCardClick={openModal}
+                isNumbered={true}
+              />
               {myList.length > 0 && (
+
+
                 <Row title="Continue Watching" isMyList={true} movies={myList} onCardClick={openModal} />
               )}
               <Row title="Trending Now" fetchUrl={`${base}/trending/all/week?api_key=${API_KEY}`} onCardClick={openModal} />
@@ -549,7 +566,7 @@ function CategoryPage({ title, rows }) {
 
         <div className="space-y-12">
           {rows.map((row, index) => (
-            <Row 
+            <Row
               key={index}
               title={row.title}
               fetchUrl={row.fetchUrl}
@@ -580,9 +597,9 @@ function App() {
         <Route path="/details/:type/:id" element={<MovieDetailPage />} />
         <Route path="/watch/:type/:id" element={<PlayerPage />} />
         <Route path="/search" element={<SearchPage />} />
-        
+
         <Route path="/tv-shows" element={
-          <CategoryPage 
+          <CategoryPage
             title="TV Shows"
             rows={[
               { title: "Popular TV Shows", fetchUrl: `${base}/tv/popular?api_key=${API_KEY}` },
@@ -593,7 +610,7 @@ function App() {
           />
         } />
         <Route path="/movies" element={
-          <CategoryPage 
+          <CategoryPage
             title="Movies"
             rows={[
               { title: "Popular Movies", fetchUrl: `${base}/movie/popular?api_key=${API_KEY}` },
@@ -604,7 +621,7 @@ function App() {
           />
         } />
         <Route path="/animation" element={
-          <CategoryPage 
+          <CategoryPage
             title="Animation"
             rows={[
               { title: "Animated Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=16` },
@@ -614,7 +631,7 @@ function App() {
           />
         } />
         <Route path="/novels" element={
-          <CategoryPage 
+          <CategoryPage
             title="Novels"
             rows={[
               { title: "Drama Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=18` },
@@ -624,7 +641,7 @@ function App() {
           />
         } />
         <Route path="/most-watched" element={
-          <CategoryPage 
+          <CategoryPage
             title="Most Watched"
             rows={[
               { title: "Trending This Week", fetchUrl: `${base}/trending/all/week?api_key=${API_KEY}` },
