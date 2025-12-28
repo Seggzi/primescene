@@ -19,14 +19,15 @@ const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const base = 'https://api.themoviedb.org/3';
 
 
-// --- GENRE BAR COMPONENT ---
+// --- GENRE BAR COMPONENT (Responsive fix for mobile sidebar) ---
 function GenreBar({ activeGenre, onGenreSelect }) {
   const genres = [
     "All", "African", "Horror", "Romantic", "Action", "Comedy", "Sci-Fi", "Documentary", "Mystery", "Crime"
   ];
 
   return (
-    <div className="flex gap-4 overflow-x-auto py-6 scrollbar-hide px-4 md:px-16 bg-black sticky top-16 z-40 border-b border-white/10">
+    <div className="flex gap-4 overflow-x-auto py-6 scrollbar-hide px-4 md:px-16 bg-black 
+                   md:sticky md:top-16 md:z-40 border-b border-white/10">
       {genres.map((genre) => (
         <button
           key={genre}
@@ -659,5 +660,3 @@ function App() {
 }
 
 export default App;
-
-
