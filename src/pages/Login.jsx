@@ -1,6 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { auth, googleProvider, signInWithPopup, signInWithEmailAndPassword, createUserWithEmailAndPassword } from '../firebase';
+import { 
+  auth, 
+  googleProvider, 
+  signInWithRedirect, 
+  getRedirectResult, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  sendPasswordResetEmail  // ← NEW: For forgot password
+} from '../firebase';
 import { useNavigate } from 'react-router-dom';
 
 function Login() {
@@ -8,17 +16,33 @@ function Login() {
   const [password, setPassword] = useState('');
   const [isRegister, setIsRegister] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(''); // For reset success message
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  // If already logged in, redirect
   if (user) {
     navigate('/');
     return null;
   }
 
+  // Handle return from Google redirect (mobile support)
+  useEffect(() => {
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          navigate('/home');
+        }
+      })
+      .catch((err) => {
+        console.error("Google redirect error:", err);
+      });
+  }, [navigate]);
+
   const handleGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      setError('');
+      await signInWithRedirect(auth, googleProvider);
     } catch (err) {
       setError('Google sign-in failed. Try again.');
     }
@@ -27,6 +51,7 @@ function Login() {
   const handleEmail = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     try {
       if (isRegister) {
         await createUserWithEmailAndPassword(auth, email, password);
@@ -35,6 +60,22 @@ function Login() {
       }
     } catch (err) {
       setError('Invalid email or password');
+    }
+  };
+
+  // NEW: Forgot Password Handler
+  const handleForgotPassword = async () => {
+    if (!email) {
+      setError('Please enter your email first.');
+      return;
+    }
+    setError('');
+    setSuccess('');
+    try {
+      await sendPasswordResetEmail(auth, email);
+      setSuccess('Password reset email sent! Check your inbox.');
+    } catch (err) {
+      setError('Failed to send reset email. Check your email address.');
     }
   };
 
@@ -50,14 +91,15 @@ function Login() {
         <div className="absolute inset-0 bg-black/60"></div>
       </div>
 
-      {/* Login Form - Moved down like Netflix */}
+      {/* Login Form */}
       <div className="relative z-10 flex items-start justify-center pt-20 sm:pt-32 md:pt-40 min-h-screen px-4">
         <div className="w-full max-w-md bg-black/75 rounded-lg p-8 sm:p-16">
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-8">
-            Sign In
+            {isRegister ? 'Sign Up' : 'Sign In'}
           </h1>
 
           {error && <p className="text-red-500 mb-4">{error}</p>}
+          {success && <p className="text-green-500 mb-4">{success}</p>}
 
           <form onSubmit={handleEmail} className="space-y-6">
             <input
@@ -81,8 +123,20 @@ function Login() {
               type="submit"
               className="w-full py-4 bg-red-600 text-white font-bold rounded hover:bg-red-700 transition text-lg"
             >
-              Sign In
+              {isRegister ? 'Sign Up' : 'Sign In'}
             </button>
+
+            {!isRegister && (
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-white/70 hover:underline text-sm"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
 
             <div className="flex items-center justify-between text-white/70 text-sm">
               <label className="flex items-center gap-2">
@@ -97,7 +151,11 @@ function Login() {
             <p className="mb-4">
               {isRegister ? 'Already have an account?' : 'New to PrimeScene?'}
               <button 
-                onClick={() => setIsRegister(!isRegister)}
+                onClick={() => {
+                  setIsRegister(!isRegister);
+                  setError('');
+                  setSuccess('');
+                }}
                 className="text-white hover:underline ml-2 font-medium"
               >
                 {isRegister ? 'Sign In' : 'Sign up now'}
@@ -105,7 +163,7 @@ function Login() {
             </p>
 
             <p className="text-sm mt-8">
-              Sign in with Google:
+              Or sign in with Google:
             </p>
             <button 
               onClick={handleGoogle}

@@ -1,17 +1,20 @@
 // src/firebase.js
 
-import { initializeApp } from 'firebase/app';
+import { initializeApp } from 'firebase/app';  // ← THIS LINE WAS MISSING!
 import { 
   getAuth, 
   GoogleAuthProvider, 
-  signInWithPopup, 
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signOut, 
-  onAuthStateChanged 
+  onAuthStateChanged,
+  sendPasswordResetEmail
 } from 'firebase/auth';
 
-// Your web app's Firebase configuration (looks correct!)
+// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCd3mv2uvlY6E_z3Nt9zHYyZfI2fbBddEw",
   authDomain: "primescene-9cba1.firebaseapp.com",
@@ -29,11 +32,13 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 
-// Export auth methods
 export {
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  sendPasswordResetEmail  // ← ADD THIS
 };
