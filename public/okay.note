@@ -1,0 +1,4 @@
+
+git add src/App.jsx
+git commit -m "Home page: Real Netflix-style rows with accurate, working fetchUrl"
+git push origin main

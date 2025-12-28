@@ -17,6 +17,7 @@ const Row = ({ title, fetchUrl, onCardClick }) => {
       })
       .catch(() => setLoading(false));
   }, [fetchUrl]);
+  
 
   const slide = (direction) => {
     if (rowRef.current) {
