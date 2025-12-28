@@ -18,6 +18,7 @@ import PlayerPage from './pages/PlayerPage';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const base = 'https://api.themoviedb.org/3';
 
+
 // --- GENRE BAR COMPONENT ---
 function GenreBar({ activeGenre, onGenreSelect }) {
   const genres = [
@@ -650,6 +651,7 @@ function App() {
             ]}
           />
         } />
+        
         <Route path="/my-list" element={<MyListPage />} />
       </Routes>
     </div>
