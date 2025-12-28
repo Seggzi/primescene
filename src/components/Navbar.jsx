@@ -144,12 +144,19 @@ function Navbar() {
 
           {/* Right */}
           <div className="flex items-center gap-4 sm:gap-6 text-white">
-            {/* Search */}
+            {/* Search - Desktop (hidden on mobile) */}
             <div className="relative" ref={searchRef}>
               <Search 
                 className="w-6 h-6 cursor-pointer hover:text-gray-300 transition hidden sm:block" 
                 onClick={toggleSearch}
               />
+              
+              {/* NEW: Mobile Search Icon (visible only on mobile) */}
+              <Search 
+                className="w-6 h-6 cursor-pointer hover:text-gray-300 transition sm:hidden" 
+                onClick={toggleSearch}
+              />
+
               {searchOpen && (
                 <div className="absolute right-0 top-full mt-2 w-64 sm:w-80 bg-black/95 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 overflow-hidden">
                   <input

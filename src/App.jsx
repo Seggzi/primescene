@@ -1,20 +1,29 @@
 import { useState, useEffect } from 'react';
+// Merged all react-router-dom imports into one line
 import { Routes, Route, Link, useLocation, Navigate, useParams, useNavigate } from 'react-router-dom';
+
+// Icons
 import { Tv, Download, Globe, Users, ChevronLeft, Play, Plus, Check, Search, X } from 'lucide-react';
+
+// Components
 import Navbar from './components/Navbar';
 import Banner from './components/Banner';
 import Row from './components/Row';
 import Modal from './components/Modal';
 import MovieDetail from './components/MovieDetail';
 import MovieCard from './components/MovieCard';
-import Login from './pages/Login';
+
+// Context
 import { useAuth } from './context/AuthContext';
 import { useMyList } from './context/MyListContext';
 
-// --- ADDED IMPORTS ---
+// Pages
+import Login from './pages/Login';
+import ProfileSelection from './pages/ProfileSelection';
+import Account from './pages/Account';
+import HelpCenter from './pages/HelpCenter';
 import MovieDetailPage from './pages/MovieDetailPage';
 import PlayerPage from './pages/PlayerPage';
-
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const base = 'https://api.themoviedb.org/3';
 
@@ -386,7 +395,7 @@ function Home() {
               {/* Dynamic Top 10 Movies (changes weekly) */}
               <Row
                 title="Top 10 Movies This Week"
-                fetchUrl={`${base}/trending/movie/week?api_key=${API_KEY}`}
+                fetchUrl={`${base}/discover/tv?api_key=${API_KEY}&with_networks=213`}
                 onCardClick={openModal}
                 isNumbered={true}  // Add this prop to show 1-10 numbers
               />
@@ -398,6 +407,11 @@ function Home() {
                 onCardClick={openModal}
                 isNumbered={true}
               />
+              <Row
+                title="Streaming on Netflix"
+                fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_watch_providers=8&watch_region=NG&sort_by=popularity.desc`}
+                onCardClick={openModal}
+              />
               {myList.length > 0 && (
 
 
@@ -407,6 +421,8 @@ function Home() {
               <Row title="Top 10 Movies This Week" fetchUrl={`${base}/trending/movie/week?api_key=${API_KEY}`} onCardClick={openModal} />
               <Row title="Top 10 TV Shows This Week" fetchUrl={`${base}/trending/tv/week?api_key=${API_KEY}`} onCardClick={openModal} />
               <Row title="Popular on PrimeScene" fetchUrl={`${base}/movie/popular?api_key=${API_KEY}`} onCardClick={openModal} />
+              <Row title="Yoruba Movies" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_original_language=yo&sort_by=popularity.desc`} onCardClick={openModal} />
+              <Row title="Nollywood Classics" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_keywords=284361&sort_by=vote_average.desc&vote_count.gte=10`} onCardClick={openModal} />
               <Row title="New Releases" fetchUrl={`${base}/movie/now_playing?api_key=${API_KEY}`} onCardClick={openModal} />
               <Row title="Coming Soon" fetchUrl={`${base}/movie/upcoming?api_key=${API_KEY}`} onCardClick={openModal} />
               <Row title="Critically Acclaimed Movies" fetchUrl={`${base}/movie/top_rated?api_key=${API_KEY}`} onCardClick={openModal} />
@@ -421,7 +437,6 @@ function Home() {
               <Row title="Animated Movies" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=16`} onCardClick={openModal} />
               <Row title="Family Movies" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_genres=10751`} onCardClick={openModal} />
               <Row title="Trending in Nollywood" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_keywords=284361&sort_by=popularity.desc`} onCardClick={openModal} />
-              <Row title="Nollywood Classics" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_keywords=284361&sort_by=vote_average.desc&vote_count.gte=10`} onCardClick={openModal} />
               <Row title="Hollywood Hits" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_origin_country=US&sort_by=popularity.desc&vote_count.gte=300`} onCardClick={openModal} />
               <Row title="African Cinema" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_origin_country=NG|ZA|GH|KE|EG&sort_by=popularity.desc`} onCardClick={openModal} />
               <Row title="Binge-Worthy TV Shows" fetchUrl={`${base}/tv/popular?api_key=${API_KEY}`} onCardClick={openModal} />
@@ -443,11 +458,13 @@ function Home() {
                 <h1 className="text-5xl font-black tracking-tight">AFRICAN CINEMA</h1>
                 <p className="text-gray-500 text-xl mt-2">Authentic stories from Nigeria, South Africa, Ghana, Kenya, and beyond.</p>
               </div>
-              <Row title="Trending in Nollywood 🔥" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_keywords=284361&sort_by=popularity.desc`} onCardClick={openModal} isLargeRow />
+              <Row title="Yoruba Movies" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_original_language=yo&sort_by=popularity.desc`} onCardClick={openModal} />
+              <Row title="Trending in Nollywood 🔥" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_keywords=284361&sort_by=popularity.desc`} onCardClick={openModal} />
               <Row title="Nollywood Classics" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_keywords=284361&sort_by=vote_average.desc&vote_count.gte=10`} onCardClick={openModal} />
               <Row title="South African Hits 🇿🇦" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_origin_country=ZA`} onCardClick={openModal} />
               <Row title="Ghanaian Cinema 🇬🇭" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_origin_country=GH`} onCardClick={openModal} />
               <Row title="East African Stories" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_origin_country=KE`} onCardClick={openModal} />
+
             </div>
           )}
 
@@ -652,7 +669,9 @@ function App() {
             ]}
           />
         } />
-        
+        <Route path="/manage-profiles" element={<ProfileSelection />} />
+        <Route path="/account" element={<Account />} />
+        <Route path="/help" element={<HelpCenter />} />
         <Route path="/my-list" element={<MyListPage />} />
       </Routes>
     </div>
