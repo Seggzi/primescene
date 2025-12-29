@@ -19,8 +19,8 @@ import { useMyList } from './context/MyListContext';
 
 // Pages
 import Login from './pages/Login';
-import ProfileSelection from './pages/ProfileSelection';
-import Account from './pages/Account';
+import ManageProfile from './pages/ManageProfile';
+import AccountSettings from './pages/AccountSettings';
 import HelpCenter from './pages/HelpCenter';
 import MovieDetailPage from './pages/MovieDetailPage';
 import PlayerPage from './pages/PlayerPage';
@@ -669,10 +669,9 @@ function App() {
             ]}
           />
         } />
-        <Route path="/manage-profiles" element={<ProfileSelection />} />
-        <Route path="/account" element={<Account />} />
-        <Route path="/help" element={<HelpCenter />} />
-        <Route path="/my-list" element={<MyListPage />} />
+<Route path="/manage-profile" element={<ManageProfile />} />
+<Route path="/account-settings" element={<AccountSettings />} />
+<Route path="/help-center" element={<HelpCenter />} />        <Route path="/my-list" element={<MyListPage />} />
       </Routes>
     </div>
   );
