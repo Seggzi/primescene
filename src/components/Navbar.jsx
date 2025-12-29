@@ -94,7 +94,7 @@ function Navbar() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const displayName = user 
+  const displayName = user
     ? (user.displayName || user.email?.split('@')[0] || 'User')
     : 'Guest';
 
@@ -107,7 +107,7 @@ function Navbar() {
           </Link>
 
           {location.pathname !== '/login' && (
-            <Link 
+            <Link
               to="/login"
               className="px-6 py-2 bg-red-600 text-white text-sm sm:text-base font-medium rounded hover:bg-red-700 transition"
             >
@@ -146,8 +146,8 @@ function Navbar() {
           <div className="flex items-center gap-4 sm:gap-6 text-white">
             {/* Search */}
             <div className="relative" ref={searchRef}>
-              <Search 
-                className="w-6 h-6 cursor-pointer hover:text-gray-300 transition" 
+              <Search
+                className="w-6 h-6 cursor-pointer hover:text-gray-300 transition"
                 onClick={toggleSearch}
               />
 
@@ -168,7 +168,7 @@ function Navbar() {
                     )}
                     {results.length > 0 ? (
                       results.map(item => (
-                        <div 
+                        <div
                           key={item.id}
                           className="flex items-center gap-4 px-4 py-3 hover:bg-white/10 transition cursor-pointer"
                           onClick={() => {
@@ -177,9 +177,9 @@ function Navbar() {
                             window.dispatchEvent(new CustomEvent('openMovieModal', { detail: item }));
                           }}
                         >
-                          <img 
-                            src={item.poster_path || item.profile_path 
-                              ? `https://image.tmdb.org/t/p/w92${item.poster_path || item.profile_path}` 
+                          <img
+                            src={item.poster_path || item.profile_path
+                              ? `https://image.tmdb.org/t/p/w92${item.poster_path || item.profile_path}`
                               : 'https://via.placeholder.com/92x138?text=No+Image'}
                             alt={item.title || item.name}
                             className="w-12 h-18 object-cover rounded"
@@ -202,11 +202,22 @@ function Navbar() {
               )}
             </div>
 
-            <Bell className="w-6 h-6 cursor-pointer hover:text-gray-300 transition hidden sm:block" />
+            <button
+              onClick={() => navigate('/account-settings')}
+              className="relative p-3 rounded-full hover:bg-white/10 transition group"
+            >
+              <Bell size={24} className="text-white group-hover:text-red-500 transition" />
+              {/* Optional red dot if all notifications are off */}
+              {!(JSON.parse(localStorage.getItem('emailNotifications') || 'true') ||
+                JSON.parse(localStorage.getItem('pushNotifications') || 'false') ||
+                JSON.parse(localStorage.getItem('smsNotifications') || 'false')) && (
+                  <span className="absolute top-1 right-1 w-3 h-3 bg-red-600 rounded-full animate-pulse"></span>
+                )}
+            </button>
 
             {/* === RED PROFILE DROPDOWN (Netflix Style) === */}
             <div className="relative" ref={profileRef}>
-              <button 
+              <button
                 onClick={toggleProfile}
                 className="flex items-center gap-2 hover:opacity-80 transition"
               >
@@ -229,22 +240,22 @@ function Navbar() {
                   </div>
 
                   <div className="py-2">
-                    <Link 
-                      to="/manage-profile" 
+                    <Link
+                      to="/manage-profile"
                       onClick={() => setProfileOpen(false)}
                       className="block px-4 py-2 text-white hover:bg-white/10 transition text-sm"
                     >
                       Manage Profile
                     </Link>
-                    <Link 
-                      to="/account-settings" 
+                    <Link
+                      to="/account-settings"
                       onClick={() => setProfileOpen(false)}
                       className="block px-4 py-2 text-white hover:bg-white/10 transition text-sm"
                     >
                       Account Settings
                     </Link>
-                    <Link 
-                      to="/help-center" 
+                    <Link
+                      to="/help-center"
                       onClick={() => setProfileOpen(false)}
                       className="block px-4 py-2 text-white hover:bg-white/10 transition text-sm"
                     >
@@ -253,7 +264,7 @@ function Navbar() {
                   </div>
 
                   <div className="py-2 border-t border-white/10">
-                    <button 
+                    <button
                       onClick={async () => {
                         await logout();
                         setProfileOpen(false);
@@ -303,11 +314,11 @@ function Navbar() {
               <Link to="/manage-profile" onClick={closeMobileMenu} className="block hover:text-white transition">Manage Profile</Link>
               <Link to="/account-settings" onClick={closeMobileMenu} className="block hover:text-white transition">Account Settings</Link>
               <Link to="/help-center" onClick={closeMobileMenu} className="block hover:text-white transition">Help Center</Link>
-              <button 
+              <button
                 onClick={async () => {
                   await logout();
                   closeMobileMenu();
-                }} 
+                }}
                 className="block w-full text-left hover:text-white transition"
               >
                 Sign Out
