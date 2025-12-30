@@ -1,10 +1,12 @@
+// src/components/Navbar.jsx - FIXED: No red avatar on mobile + onClick fix
+
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, Bell, ChevronDown, Menu, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth(); // logout is a function
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -19,7 +21,7 @@ function Navbar() {
   const [scrolled, setScrolled] = useState(false);
 
   const searchRef = useRef(null);
-  const profileRef = useRef(null); // For clicking outside
+  const profileRef = useRef(null);
 
   const toggleProfile = () => setProfileOpen(!profileOpen);
   const toggleMobileMenu = () => setMobileMenuOpen(!mobileMenuOpen);
@@ -45,7 +47,7 @@ function Navbar() {
     }
   };
 
-  // Close search when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -61,7 +63,7 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Debounced TMDB search (for dropdown preview)
+  // Debounced TMDB search
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
@@ -119,7 +121,6 @@ function Navbar() {
     );
   }
 
-  // Full navbar for logged-in users
   return (
     <>
       <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? 'bg-black' : 'bg-transparent'}`}>
@@ -207,15 +208,9 @@ function Navbar() {
               className="relative p-3 rounded-full hover:bg-white/10 transition group"
             >
               <Bell size={24} className="text-white group-hover:text-red-500 transition" />
-              {/* Optional red dot if all notifications are off */}
-              {!(JSON.parse(localStorage.getItem('emailNotifications') || 'true') ||
-                JSON.parse(localStorage.getItem('pushNotifications') || 'false') ||
-                JSON.parse(localStorage.getItem('smsNotifications') || 'false')) && (
-                  <span className="absolute top-1 right-1 w-3 h-3 bg-red-600 rounded-full animate-pulse"></span>
-                )}
             </button>
 
-            {/* === RED PROFILE DROPDOWN (Netflix Style) === */}
+            {/* Profile Dropdown */}
             <div className="relative" ref={profileRef}>
               <button
                 onClick={toggleProfile}
@@ -227,7 +222,6 @@ function Navbar() {
                 <ChevronDown className={`w-4 h-4 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {/* Dropdown Menu */}
               {profileOpen && (
                 <div className="absolute right-0 top-full mt-3 w-56 bg-black border border-white/20 rounded-lg shadow-2xl overflow-hidden z-50">
                   <div className="py-3 border-b border-white/10">
@@ -266,7 +260,7 @@ function Navbar() {
                   <div className="py-2 border-t border-white/10">
                     <button
                       onClick={async () => {
-                        await logout();
+                        await logout(); // Fixed: was string, now function
                         setProfileOpen(false);
                         navigate('/');
                       }}
@@ -287,7 +281,7 @@ function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile Side Menu (unchanged) */}
+      {/* Mobile Menu - NO RED AVATAR */}
       <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-black/95 backdrop-blur-lg transform transition-transform duration-300 lg:hidden ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full pt-20 px-6">
           <ul className="space-y-6 text-white text-lg font-medium">
@@ -301,14 +295,10 @@ function Navbar() {
           </ul>
 
           <div className="mt-auto mb-10">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-12 h-12 bg-red-600 rounded-full flex items-center justify-center text-white font-bold">
-                {user ? displayName[0].toUpperCase() : 'G'}
-              </div>
-              <div>
-                <p className="text-white font-medium">{displayName}</p>
-                <p className="text-white/70 text-sm">Switch Profile</p>
-              </div>
+            {/* Only name shown on mobile */}
+            <div className="mb-6">
+              <p className="text-white font-medium text-xl">{displayName}</p>
+              <p className="text-white/70 text-sm">Switch Profile</p>
             </div>
             <div className="space-y-3 text-white/80 text-sm">
               <Link to="/manage-profile" onClick={closeMobileMenu} className="block hover:text-white transition">Manage Profile</Link>

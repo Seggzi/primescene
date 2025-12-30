@@ -1,5 +1,7 @@
+// src/components/Banner.jsx - FIXED: isInMyList error
+
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // Added for page navigation
+import { useNavigate } from 'react-router-dom';
 import Modal from './Modal.jsx';
 import MovieDetail from './MovieDetail.jsx';
 import { useMyList } from '../context/MyListContext';
@@ -8,10 +10,15 @@ function Banner({ onPlay, onInfo }) {
     const [movie, setMovie] = useState(null);
     const [playOpen, setPlayOpen] = useState(false);
     const [infoOpen, setInfoOpen] = useState(false);
-    const { addToMyList, removeFromMyList, isInMyList } = useMyList();
-    const navigate = useNavigate(); // Hook for navigating to new pages
+    const { addToMyList, removeFromMyList, myList } = useMyList(); // Get myList
+    const navigate = useNavigate();
 
-    const inList = isInMyList(movie?.id);
+    // Fixed: Define isInMyList safely
+    const isInMyList = (movieId) => {
+      return myList?.some(item => item.id === movieId) || false;
+    };
+
+    const inList = movie ? isInMyList(movie.id) : false;
 
     useEffect(() => {
         const fetchBanner = async () => {
@@ -25,9 +32,8 @@ function Banner({ onPlay, onInfo }) {
                 }
             } catch (err) {
                 console.error(err);
-                // Fallback so it never crashes
                 setMovie({
-                    id: 1, // Added ID for routing
+                    id: 1,
                     media_type: "movie",
                     title: "The Running Man",
                     name: "The Running Man",
@@ -44,18 +50,16 @@ function Banner({ onPlay, onInfo }) {
         return <div className="h-[60vh] md:h-[80vh] bg-slate-900 flex items-center justify-center text-white text-2xl">Loading...</div>;
     }
 
-    // Helper to handle the navigation to the dedicated Play Page
     const handlePlayClick = () => {
         const type = movie.media_type || 'movie';
         navigate(`/watch/${type}/${movie.id}`);
-        if (onPlay) onPlay(movie); // Keep original prop functionality
+        if (onPlay) onPlay(movie);
     };
 
-    // Helper to handle the navigation to the dedicated Details Page
     const handleInfoClick = () => {
         const type = movie.media_type || 'movie';
         navigate(`/details/${type}/${movie.id}`);
-        if (onInfo) onInfo(movie); // Keep original prop functionality
+        if (onInfo) onInfo(movie);
     };
 
     const backdrop = movie.backdrop_path
@@ -80,7 +84,6 @@ function Banner({ onPlay, onInfo }) {
                     Featured
                 </p>
 
-                {/* Title - smaller, fixed size, no overflow */}
                 <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-3 sm:mb-4 leading-tight truncate"
                     style={{ textShadow: '0 0 20px rgba(0,0,0,0.9), 0 0 40px rgba(0,0,0,0.8), 2px 2px 4px black' }}>
                     {movie.title || movie.name}
@@ -90,13 +93,11 @@ function Banner({ onPlay, onInfo }) {
                     ★ {rating} Rating
                 </p>
 
-                {/* Overview - smaller, responsive */}
                 <p className="text-xs sm:text-sm md:text-base text-white mb-6 sm:mb-8 max-w-full sm:max-w-2xl leading-relaxed line-clamp-3 sm:line-clamp-4"
                     style={{ textShadow: '2px 2px 4px black, 0 0 10px rgba(0,0,0,0.8)' }}>
                     {movie.overview || 'Discover this trending title on PrimeScene.'}
                 </p>
 
-                {/* Buttons - smaller on mobile, rounded */}
                 <div className="flex flex-wrap gap-4 sm:gap-6">
                     <button
                         onClick={handlePlayClick}
@@ -119,7 +120,6 @@ function Banner({ onPlay, onInfo }) {
                 </div>
             </div>
 
-            {/* Modals - Kept exactly as requested */}
             {playOpen && (
                 <Modal isOpen={playOpen} onClose={() => setPlayOpen(false)}>
                     <MovieDetail movie={movie} showOnlyPlayer={true} />
