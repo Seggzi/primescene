@@ -1,10 +1,10 @@
-// src/pages/ManageProfile.jsx - FULLY FIXED: Auto-Profile Creation + No Loading Stuck
+// src/pages/ManageProfile.jsx - FULLY FIXED: Auto-Profile Creation + No Errors
 
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Users, Plus, Trash2, AlertTriangle, Lock, Edit, Save, 
-  Shield, Smartphone, Trophy, Film, Clock, Zap, ChevronRight, Check 
+import {
+  Users, Plus, Trash2, AlertTriangle, Lock, Edit, Save,
+  Shield, Smartphone, Trophy, Film, Clock, Zap, ChevronRight, Check
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
@@ -78,12 +78,12 @@ function ManageProfile() {
 
   useEffect(() => { saveData(); }, [profiles, activityTimeline, stats]);
 
-  // AUTO-CREATE PROFILE ON FIRST LOGIN
+  // AUTO-CREATE PROFILE FOR NEW USERS
   useEffect(() => {
     if (user && profiles.length === 0) {
       const defaultProfile = {
         id: 1,
-        name: user.displayName || user.email.split('@')[0] || 'Main Profile',
+        name: user.displayName || user.email?.split('@')[0] || 'Main Profile',
         avatar: user.photoURL || null,
         isActive: true,
         isKids: false,
@@ -96,7 +96,7 @@ function ManageProfile() {
     }
   }, [user, profiles.length]);
 
-  // Auto-set currentProfile when profiles load
+  // SET CURRENT PROFILE WHEN PROFILES LOAD
   useEffect(() => {
     if (profiles.length > 0 && !currentProfile) {
       const active = profiles.find(p => p.isActive) || profiles[0];
@@ -199,11 +199,20 @@ function ManageProfile() {
     setPinError('');
   };
 
-  // Only show loading when no profiles and no user
-  if (profiles.length === 0 && !user) {
+  // SAFE LOADING: Only show when no user and no profiles
+  if (!user && profiles.length === 0) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-gray-400">
         Loading profile...
+      </div>
+    );
+  }
+
+  // If user exists but no profile yet, auto-creation useEffect will handle it
+  if (!currentProfile) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center text-gray-400">
+        Setting up your profile...
       </div>
     );
   }
@@ -383,17 +392,21 @@ function ManageProfile() {
           </div>
         )}
 
-        {/* Device */}
+        {/* Current Devices - Multiple */}
         <div className="mt-10">
-          <h2 className="text-xl font-bold mb-4">Current Device</h2>
-          <div className="bg-zinc-900/60 rounded-xl p-5 flex items-center justify-between border border-white/10">
-            <div className="flex items-center gap-4">
-              <Smartphone size={28} className="text-red-500" />
-              <div>
-                <p className="font-semibold">This device</p>
-                <p className="text-sm text-gray-500">Active now</p>
+          <h2 className="text-xl font-bold mb-4">Active Devices</h2>
+          <div className="space-y-4">
+            <div className="bg-zinc-900/60 rounded-xl p-5 flex items-center justify-between border border-white/10">
+              <div className="flex items-center gap-4">
+                <Smartphone size={28} className="text-red-500" />
+                <div>
+                  <p className="font-semibold">This device</p>
+                  <p className="text-sm text-gray-500">Active now</p>
+                </div>
               </div>
+              <span className="text-green-500 text-sm">Current</span>
             </div>
+            {/* Future: show other devices from Supabase sessions */}
           </div>
         </div>
 
