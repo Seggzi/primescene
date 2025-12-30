@@ -41,12 +41,7 @@ export const storage = getStorage(app);
 
 export const googleProvider = new GoogleAuthProvider();
 
-// Connect to local emulators when on localhost
-if (window.location.hostname === "localhost") {
-  connectFirestoreEmulator(db, "localhost", 8080);
-  connectAuthEmulator(auth, "http://localhost:9099");
-  console.log("🔥 Connected to local Firestore & Auth emulators");
-}
+
 
 // Export auth methods
 export {
