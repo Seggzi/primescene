@@ -669,9 +669,10 @@ function App() {
             ]}
           />
         } />
-<Route path="/manage-profile" element={<ManageProfile />} />
-<Route path="/account-settings" element={<AccountSettings />} />
-<Route path="/help-center" element={<HelpCenter />} />        <Route path="/my-list" element={<MyListPage />} />
+        <Route path="/manage-profile" element={<ManageProfile />} />
+        <Route path="/account-settings" element={<AccountSettings />} />
+        <Route path="/help-center" element={<HelpCenter />} />
+        <Route path="/my-list" element={<MyListPage />} />
       </Routes>
     </div>
   );
