@@ -1,6 +1,6 @@
 // src/firebase.js
 
-import { initializeApp } from 'firebase/app';  // ← THIS LINE WAS MISSING!
+import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
   GoogleAuthProvider, 
@@ -11,10 +11,18 @@ import {
   createUserWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
-  sendPasswordResetEmail
+  sendPasswordResetEmail,
+  connectAuthEmulator  // ← NEW
 } from 'firebase/auth';
 
-// Your web app's Firebase configuration
+import { 
+  getFirestore, 
+  connectFirestoreEmulator 
+} from 'firebase/firestore';
+
+import { getStorage } from 'firebase/storage'; // optional for future
+
+// Your config
 const firebaseConfig = {
   apiKey: "AIzaSyCd3mv2uvlY6E_z3Nt9zHYyZfI2fbBddEw",
   authDomain: "primescene-9cba1.firebaseapp.com",
@@ -25,13 +33,22 @@ const firebaseConfig = {
   measurementId: "G-V5M8073L9L"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Auth
 export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);
+
 export const googleProvider = new GoogleAuthProvider();
 
+// Connect to local emulators when on localhost
+if (window.location.hostname === "localhost") {
+  connectFirestoreEmulator(db, "localhost", 8080);
+  connectAuthEmulator(auth, "http://localhost:9099");
+  console.log("🔥 Connected to local Firestore & Auth emulators");
+}
+
+// Export auth methods
 export {
   signInWithPopup,
   signInWithRedirect,
@@ -40,5 +57,5 @@ export {
   createUserWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  sendPasswordResetEmail  // ← ADD THIS
+  sendPasswordResetEmail
 };

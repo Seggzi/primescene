@@ -6,6 +6,9 @@ import {
   Trash2, AlertTriangle, Lock 
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
+import { db, auth } from '../firebase';
+import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 function ManageProfile() {
   const { user } = useAuth();
@@ -88,6 +91,61 @@ function ManageProfile() {
   });
 
   const [badges, setBadges] = useState(stats.badges);
+
+  // ==================== NEW: REAL-TIME FIRESTORE SYNC ====================
+  useEffect(() => {
+    if (!user) return;
+
+    const userDocRef = doc(db, "users", user.uid);
+
+    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.profiles) setProfiles(data.profiles);
+        if (data.activity) setActivityTimeline(data.activity);
+        if (data.stats) {
+          setStats(data.stats);
+          setBadges(data.stats.badges || []);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, [user]);
+
+  // Save to Firestore + localStorage whenever data changes
+  const saveData = async () => {
+    // Always save to localStorage (fallback)
+    localStorage.setItem('profiles', JSON.stringify(profiles));
+    localStorage.setItem('activity', JSON.stringify(activityTimeline));
+    localStorage.setItem('stats', JSON.stringify(stats));
+
+    // If user is logged in, also save to Firestore
+    if (user) {
+      const userDocRef = doc(db, "users", user.uid);
+      try {
+        await setDoc(userDocRef, {
+          profiles,
+          activity: activityTimeline,
+          stats
+        }, { merge: true });
+      } catch (error) {
+        console.error("Error saving to Firestore:", error);
+      }
+    }
+  };
+
+  useEffect(() => {
+    saveData();
+  }, [profiles, activityTimeline, stats]);
+
+  // Load default data on first login if nothing exists in Firestore
+  useEffect(() => {
+    if (user && profiles.length === 1 && profiles[0].id === 1 && profiles[0].name === 'Main Profile') {
+      // This is the default — Firestore will override if data exists
+      // No action needed — onSnapshot will handle it
+    }
+  }, [user, profiles]);
 
   useEffect(() => {
     if (profiles.length > 0) {
