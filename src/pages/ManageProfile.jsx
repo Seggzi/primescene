@@ -1,4 +1,4 @@
-// src/pages/ManageProfile.jsx - FULLY FIXED & COMPACT VERSION (All Features Preserved)
+// src/pages/ManageProfile.jsx - FULLY FIXED, COMPACT, SUPABASE-READY (No Firebase)
 
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -7,8 +7,7 @@ import {
   Shield, Smartphone, Trophy, Film, Clock, Zap, ChevronRight, Check 
 } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
-import { db } from '../firebase';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { supabase } from '../supabase';
 
 function ManageProfile() {
   const { user } = useAuth();
@@ -36,7 +35,7 @@ function ManageProfile() {
 
   const kidMaturityLevels = ['All Ages', '7+', '10+', '13+', '16+'];
 
-  // Firestore + localStorage sync
+  // Supabase + localStorage sync
   useEffect(() => {
     if (!user) {
       const loadLocal = () => {
@@ -51,15 +50,17 @@ function ManageProfile() {
       return;
     }
 
-    const unsub = onSnapshot(doc(db, "users", user.uid), (snap) => {
-      if (snap.exists()) {
-        const data = snap.data();
+    const channel = supabase
+      .channel('user-data')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users', filter: `id=eq.${user.uid}` }, (payload) => {
+        const data = payload.new;
         if (data.profiles) setProfiles(data.profiles);
         if (data.activity) setActivityTimeline(data.activity || []);
         if (data.stats) setStats(data.stats);
-      }
-    });
-    return unsub;
+      })
+      .subscribe();
+
+    return () => supabase.removeChannel(channel);
   }, [user]);
 
   const saveData = async () => {
@@ -68,7 +69,10 @@ function ManageProfile() {
     localStorage.setItem('stats', JSON.stringify(stats));
 
     if (user) {
-      await setDoc(doc(db, "users", user.uid), { profiles, activity: activityTimeline, stats }, { merge: true });
+      const { error } = await supabase
+        .from('users')
+        .upsert({ id: user.uid, profiles, activity: activityTimeline, stats });
+      if (error) console.error('Supabase save error:', error);
     }
   };
 
@@ -177,7 +181,7 @@ function ManageProfile() {
     setPinError('');
   };
 
-  // Loading state — only when profiles are empty
+  // Loading state
   if (profiles.length === 0) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-gray-400">
