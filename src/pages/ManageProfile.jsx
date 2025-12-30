@@ -1,4 +1,4 @@
-// src/pages/ManageProfile.jsx - FULLY FIXED, COMPACT, SUPABASE-READY (No Firebase)
+// src/pages/ManageProfile.jsx - FULLY FIXED: Auto-Profile Creation + No Loading Stuck
 
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -77,6 +77,24 @@ function ManageProfile() {
   };
 
   useEffect(() => { saveData(); }, [profiles, activityTimeline, stats]);
+
+  // AUTO-CREATE PROFILE ON FIRST LOGIN
+  useEffect(() => {
+    if (user && profiles.length === 0) {
+      const defaultProfile = {
+        id: 1,
+        name: user.displayName || user.email.split('@')[0] || 'Main Profile',
+        avatar: user.photoURL || null,
+        isActive: true,
+        isKids: false,
+        pin: null,
+        maturityLevel: 'TV-MA'
+      };
+      setProfiles([defaultProfile]);
+      setCurrentProfile(defaultProfile);
+      setNewName(defaultProfile.name);
+    }
+  }, [user, profiles.length]);
 
   // Auto-set currentProfile when profiles load
   useEffect(() => {
@@ -181,8 +199,8 @@ function ManageProfile() {
     setPinError('');
   };
 
-  // Loading state
-  if (profiles.length === 0) {
+  // Only show loading when no profiles and no user
+  if (profiles.length === 0 && !user) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center text-gray-400">
         Loading profile...

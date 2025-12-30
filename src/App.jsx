@@ -1,11 +1,8 @@
 import { useState, useEffect } from 'react';
-// Merged all react-router-dom imports into one line
 import { Routes, Route, Link, useLocation, Navigate, useParams, useNavigate } from 'react-router-dom';
 
-// Icons
 import { Tv, Download, Globe, Users, ChevronLeft, Play, Plus, Check, Search, X } from 'lucide-react';
 
-// Components
 import Navbar from './components/Navbar';
 import Banner from './components/Banner';
 import Row from './components/Row';
@@ -13,17 +10,18 @@ import Modal from './components/Modal';
 import MovieDetail from './components/MovieDetail';
 import MovieCard from './components/MovieCard';
 
-// Context
 import { useAuth } from './context/AuthContext';
 import { useMyList } from './context/MyListContext';
 
-// Pages
 import Login from './pages/Login';
 import ManageProfile from './pages/ManageProfile';
 import AccountSettings from './pages/AccountSettings';
 import HelpCenter from './pages/HelpCenter';
 import MovieDetailPage from './pages/MovieDetailPage';
 import PlayerPage from './pages/PlayerPage';
+
+import { supabase } from './supabase'; // <-- Added for force logout
+
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const base = 'https://api.themoviedb.org/3';
 
@@ -602,8 +600,14 @@ function CategoryPage({ title, rows }) {
   );
 }
 
-// --- APP COMPONENT ---
+// --- APP COMPONENT WITH FORCE LOGOUT ---
 function App() {
+  // FORCE LOGOUT ALL OLD USERS + CLEAR LOCAL DATA ON APP LOAD
+  useEffect(() => {
+    localStorage.clear();
+    supabase.auth.signOut();
+  }, []);
+
   const { user } = useAuth();
 
   return (
