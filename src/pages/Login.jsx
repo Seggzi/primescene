@@ -1,15 +1,8 @@
-// src/pages/Login.jsx
+// src/pages/Login.jsx - FULLY MIGRATED TO SUPABASE (Google + Email/Password + Forgot Password)
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { 
-  auth, 
-  googleProvider, 
-  signInWithPopup,  // ← Use popup for web (better UX)
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  sendPasswordResetEmail
-} from '../firebase';
+import { supabase } from '../supabase'; // Your supabase client
 import { useNavigate } from 'react-router-dom';
 
 function Login() {
@@ -33,8 +26,13 @@ function Login() {
     setLoading(true);
     setError('');
     try {
-      await signInWithPopup(auth, googleProvider);
-      // onAuthStateChanged in App.jsx will redirect
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: window.location.origin + '/home', // Redirect after login
+        },
+      });
+      if (error) throw error;
     } catch (err) {
       setError('Google sign-in failed. Try again.');
       setLoading(false);
@@ -46,16 +44,22 @@ function Login() {
     setError('');
     setLoading(true);
     try {
+      let error;
       if (isRegister) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const { error: signUpError } = await supabase.auth.signUp({ email, password });
+        error = signUpError;
+        if (!error) setSuccess('Check your email to confirm your account!');
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        error = signInError;
       }
-      // Redirect handled by AuthContext
+      if (error) throw error;
     } catch (err) {
-      setError(err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password'
-        ? 'Invalid email or password'
-        : 'Something went wrong. Try again.');
+      setError(
+        err.message.includes('Invalid login credentials') || err.message.includes('Email not confirmed')
+          ? 'Invalid email or password'
+          : err.message || 'Something went wrong. Try again.'
+      );
     } finally {
       setLoading(false);
     }
@@ -67,12 +71,15 @@ function Login() {
       return;
     }
     setLoading(true);
+    setError('');
     try {
-      await sendPasswordResetEmail(auth, email);
-      setSuccess('Check your email for reset link!');
-      setError('');
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: window.location.origin + '/login', // Back to login after reset
+      });
+      if (error) throw error;
+      setSuccess('Check your email for password reset link!');
     } catch (err) {
-      setError('Failed to send reset email');
+      setError('Failed to send reset email. Check your email address.');
     } finally {
       setLoading(false);
     }
