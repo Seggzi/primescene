@@ -1,27 +1,27 @@
-// src/pages/ManageProfile.jsx - FULLY FIXED FOR SUPABASE (users table) + AUTO PROFILE + NO CRASH
+// src/pages/ManageProfile.jsx - FINAL FIXED VERSION
 
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useNotification } from '../context/NotificationContext';
 import { 
-  Check, Users, Download, Tv, Shield, Clock, Film, Star, Trophy, 
-  Smartphone, Laptop, Zap, Calendar, ChevronRight, Edit, Save, Plus, 
+  Check, Users, Shield, Clock, Film, Trophy, 
+  Smartphone, Zap, Calendar, ChevronRight, Edit, Save, Plus, 
   Trash2, AlertTriangle, Lock 
 } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 
 function ManageProfile() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { addNotification } = useNotification();
 
   const [profiles, setProfiles] = useState([]);
   const [currentProfile, setCurrentProfile] = useState(null);
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState('');
-
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
-  // Parental Controls States
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
@@ -30,9 +30,8 @@ function ManageProfile() {
   const [confirmPin, setConfirmPin] = useState('');
   const [showMaturity, setShowMaturity] = useState(false);
   const [selectedMaturity, setSelectedMaturity] = useState('All Ages');
-  const [pinPurpose, setPinPurpose] = useState(null); // 'toggleKids' or 'openMaturity'
+  const [pinPurpose, setPinPurpose] = useState(null);
 
-  // Kid-friendly age ratings
   const kidMaturityLevels = [
     { rating: 'All Ages', desc: 'Suitable for everyone (0+)' },
     { rating: '7+', desc: 'Recommended for ages 7 and up' },
@@ -40,10 +39,6 @@ function ManageProfile() {
     { rating: '13+', desc: 'Recommended for ages 13 and up' },
     { rating: '16+', desc: 'Recommended for ages 16 and up' }
   ];
-
-  // Avatar Upload States
-  const [uploadPreview, setUploadPreview] = useState(null);
-  const fileInputRef = useRef(null);
 
   const [devices, setDevices] = useState(() => {
     const userAgent = navigator.userAgent;
@@ -72,7 +67,7 @@ function ManageProfile() {
 
   const [badges, setBadges] = useState(stats.badges);
 
-  // Supabase + localStorage sync
+  // === TRUE REAL-TIME SYNC ===
   useEffect(() => {
     if (!user) {
       const loadLocal = () => {
@@ -88,61 +83,75 @@ function ManageProfile() {
     }
 
     const channel = supabase
-      .channel('user-data')
+      .channel(`profile-sync-${user.uid}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users', filter: `id=eq.${user.uid}` }, (payload) => {
         const data = payload.new;
-        if (data.profiles) setProfiles(data.profiles || []);
-        if (data.activity) setActivityTimeline(data.activity || []);
-        if (data.stats) {
-          setStats(data.stats);
-          setBadges(data.stats.badges || []);
-        }
+        setProfiles(data.profiles || []);
+        setActivityTimeline(data.activity || []);
+        setStats(data.stats || stats);
+        setBadges(data.stats?.badges || badges);
       })
       .subscribe();
 
-    // Initial fetch
-    supabase
-      .from('users')
-      .select('profiles, activity, stats')
-      .eq('id', user.uid)
-      .single()
-      .then(({ data, error }) => {
-        if (data) {
-          if (data.profiles) setProfiles(data.profiles);
-          if (data.activity) setActivityTimeline(data.activity);
-          if (data.stats) {
-            setStats(data.stats);
-            setBadges(data.stats.badges || []);
-          }
-        }
-        if (error && error.code !== 'PGRST116') console.error('Fetch error:', error);
-      });
+    const fetchData = async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('profiles, activity, stats')
+        .eq('id', user.uid)
+        .single();
 
-    return () => supabase.removeChannel(channel);
+      if (error && error.code !== 'PGRST116') {
+        console.error('Fetch error:', error);
+        return;
+      }
+
+      if (data) {
+        setProfiles(data.profiles || []);
+        setActivityTimeline(data.activity || []);
+        setStats(data.stats || {
+          watched: 0,
+          hours: 0,
+          favoriteGenre: 'Drama',
+          streak: 1,
+          badges: ['First Watch', 'Nollywood Fan']
+        });
+        setBadges(data.stats?.badges || ['First Watch', 'Nollywood Fan']);
+      }
+    };
+
+    fetchData();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
-  const saveData = async () => {
-    localStorage.setItem('profiles', JSON.stringify(profiles));
-    localStorage.setItem('activity', JSON.stringify(activityTimeline));
-    localStorage.setItem('stats', JSON.stringify(stats));
+  // === SAVE TO SUPABASE ===
+  const saveToSupabase = async () => {
+    if (!user) return;
 
-    if (user) {
-      const { error } = await supabase
-        .from('users')
-        .upsert({ id: user.uid, profiles, activity: activityTimeline, stats });
-      if (error) console.error('Supabase save error:', error);
-    }
+    const { error } = await supabase
+      .from('users')
+      .upsert({
+        id: user.uid,
+        profiles,
+        activity: activityTimeline,
+        stats
+      });
+
+    if (error) console.error('Save error:', error);
   };
 
-  useEffect(() => { saveData(); }, [profiles, activityTimeline, stats]);
+  useEffect(() => {
+    saveToSupabase();
+  }, [profiles, activityTimeline, stats]);
 
-  // AUTO-CREATE PROFILE FOR NEW USERS
+  // === AUTO CREATE PROFILE ===
   useEffect(() => {
     if (user && profiles.length === 0) {
       const defaultProfile = {
         id: 1,
         name: user.displayName || user.email?.split('@')[0] || 'Main Profile',
-        avatar: user.photoURL || null,
         isActive: true,
         isKids: false,
         pin: null,
@@ -155,7 +164,7 @@ function ManageProfile() {
     }
   }, [user, profiles.length]);
 
-  // SET CURRENT PROFILE WHEN PROFILES LOAD
+  // === SET CURRENT PROFILE ===
   useEffect(() => {
     if (profiles.length > 0 && !currentProfile) {
       const active = profiles.find(p => p.isActive) || profiles[0];
@@ -164,20 +173,27 @@ function ManageProfile() {
     }
   }, [profiles]);
 
-  const getAvatarUrl = (profile) => {
-    if (profile.avatar) return profile.avatar;
-    if (user?.photoURL) return user.photoURL;
-    return `https://via.placeholder.com/150?text=${profile.name[0].toUpperCase()}`;
-  };
+  const getAvatarLetter = (name) => name?.[0]?.toUpperCase() || '?';
 
+  // === SCROLL EFFECT (FIXED) ===
+  useEffect(() => {
+    const handleScroll = () => {
+      // You can add scrolled state if needed for navbar background
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // === PROFILE FUNCTIONS WITH NOTIFICATIONS ===
   const handleNameChange = () => {
-    if (!currentProfile) return;
+    if (!currentProfile || !newName.trim()) return;
     const updatedProfiles = profiles.map(p => 
-      p.id === currentProfile.id ? { ...p, name: newName } : p
+      p.id === currentProfile.id ? { ...p, name: newName.trim() } : p
     );
     setProfiles(updatedProfiles);
-    setCurrentProfile({ ...currentProfile, name: newName });
+    setCurrentProfile({ ...currentProfile, name: newName.trim() });
     setEditingName(false);
+    addNotification('Profile name updated successfully!', 'success');
   };
 
   const switchProfile = (profile) => {
@@ -187,6 +203,7 @@ function ManageProfile() {
     }));
     setProfiles(updatedProfiles);
     setCurrentProfile(profile);
+    addNotification(`Switched to ${profile.name}`, 'success');
   };
 
   const addProfile = () => {
@@ -197,7 +214,6 @@ function ManageProfile() {
     const newProfile = {
       id: Date.now(),
       name: 'New Profile',
-      avatar: null,
       isActive: false,
       isKids: false,
       pin: null,
@@ -205,6 +221,7 @@ function ManageProfile() {
       dailyLimit: null
     };
     setProfiles([...profiles, newProfile]);
+    addNotification('New profile created!', 'success');
   };
 
   const deleteProfile = (profileId) => {
@@ -214,52 +231,17 @@ function ManageProfile() {
       return;
     }
 
-    const updatedProfiles = profiles.filter(p => p.id !== profileId);
-    if (currentProfile.id === profileId) {
-      const newActive = updatedProfiles[0];
-      updatedProfiles[0] = { ...newActive, isActive: true };
-      setCurrentProfile(newActive);
+    let updatedProfiles = profiles.filter(p => p.id !== profileId);
+    if (currentProfile?.id === profileId) {
+      updatedProfiles[0].isActive = true;
+      setCurrentProfile(updatedProfiles[0]);
     }
     setProfiles(updatedProfiles);
     setDeleteConfirm(null);
+    addNotification('Profile deleted', 'success');
   };
 
-  // Avatar Upload
-  const handleAvatarUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const size = 200;
-        canvas.width = size;
-        canvas.height = size;
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, size, size);
-
-        const resizedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
-
-        const updated = { ...currentProfile, avatar: resizedDataUrl };
-        setCurrentProfile(updated);
-        const updatedProfiles = profiles.map(p => p.id === updated.id ? updated : p);
-        setProfiles(updatedProfiles);
-        setUploadPreview(null);
-      };
-      img.src = event.target.result;
-      setUploadPreview(event.target.result);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Parental Controls
+  // === KIDS MODE & PIN WITH NOTIFICATIONS ===
   const handleMaturityClick = () => {
     if (currentProfile.pin) {
       setPinPurpose('openMaturity');
@@ -277,14 +259,11 @@ function ManageProfile() {
     }
 
     const updated = { ...currentProfile, isKids: !currentProfile.isKids };
-    if (updated.isKids) {
-      updated.maturityLevel = 'All Ages';
-    } else {
-      updated.maturityLevel = 'TV-MA';
-    }
+    updated.maturityLevel = updated.isKids ? 'All Ages' : 'TV-MA';
     setCurrentProfile(updated);
-    const updatedProfiles = profiles.map(p => p.id === updated.id ? updated : p);
+    const updatedProfiles = profiles.map(p => p.id === currentProfile.id ? updated : p);
     setProfiles(updatedProfiles);
+    addNotification(updated.isKids ? 'Kids Mode enabled' : 'Kids Mode disabled', 'success');
   };
 
   const handlePinUnlock = () => {
@@ -295,15 +274,7 @@ function ManageProfile() {
       setPinPurpose(null);
 
       if (pinPurpose === 'toggleKids') {
-        const updated = { ...currentProfile, isKids: !currentProfile.isKids };
-        if (updated.isKids) {
-          updated.maturityLevel = 'All Ages';
-        } else {
-          updated.maturityLevel = 'TV-MA';
-        }
-        setCurrentProfile(updated);
-        const updatedProfiles = profiles.map(p => p.id === updated.id ? updated : p);
-        setProfiles(updatedProfiles);
+        toggleKidsMode();
       } else if (pinPurpose === 'openMaturity') {
         setShowMaturity(true);
       }
@@ -315,9 +286,10 @@ function ManageProfile() {
   const saveMaturityLevel = () => {
     const updated = { ...currentProfile, maturityLevel: selectedMaturity };
     setCurrentProfile(updated);
-    const updatedProfiles = profiles.map(p => p.id === updated.id ? updated : p);
+    const updatedProfiles = profiles.map(p => p.id === currentProfile.id ? updated : p);
     setProfiles(updatedProfiles);
     setShowMaturity(false);
+    addNotification(`Content rating set to ${selectedMaturity}`, 'success');
   };
 
   const handleSetPin = () => {
@@ -332,34 +304,16 @@ function ManageProfile() {
 
     const updated = { ...currentProfile, pin: newPin };
     setCurrentProfile(updated);
-    const updatedProfiles = profiles.map(p => p.id === updated.id ? updated : p);
+    const updatedProfiles = profiles.map(p => p.id === currentProfile.id ? updated : p);
     setProfiles(updatedProfiles);
     setSettingPin(false);
     setNewPin('');
     setConfirmPin('');
     setPinError('');
+    addNotification(currentProfile.pin ? 'PIN changed successfully' : 'PIN set successfully', 'success');
   };
 
-  const addActivity = (title) => {
-    const newActivity = { title, time: new Date().toLocaleString() };
-    setActivityTimeline([newActivity, ...activityTimeline.slice(0, 9)]);
-    setStats(prev => ({
-      ...prev,
-      watched: prev.watched + 1,
-      hours: prev.hours + 2,
-      streak: prev.streak + 1
-    }));
-  };
-
-  useEffect(() => {
-    if (stats.watched > 10 && !badges.includes('Movie Buff')) {
-      const newBadges = [...badges, 'Movie Buff'];
-      setBadges(newBadges);
-      setStats(prev => ({ ...prev, badges: newBadges }));
-    }
-  }, [stats.watched]);
-
-  // SAFE LOADING
+  // === LOADING STATES ===
   if (profiles.length === 0 && !user) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
@@ -393,11 +347,9 @@ function ManageProfile() {
                 className={`relative bg-zinc-900/70 rounded-2xl p-6 border ${profile.isActive ? 'border-red-600' : 'border-white/10'} cursor-pointer hover:border-red-500 transition-all group`}
                 onClick={() => switchProfile(profile)}
               >
-                <img 
-                  src={getAvatarUrl(profile)} 
-                  alt={profile.name} 
-                  className="w-20 h-20 rounded-full mx-auto mb-4 object-cover" 
-                />
+                <div className="w-20 h-20 rounded-full mx-auto mb-4 bg-red-600 flex items-center justify-center text-4xl font-bold">
+                  {getAvatarLetter(profile.name)}
+                </div>
                 <p className="text-center font-bold">{profile.name}</p>
                 {profile.isKids && <span className="block text-center text-sm text-green-400 mt-2">Kids Mode</span>}
                 
@@ -493,41 +445,6 @@ function ManageProfile() {
               )}
             </div>
 
-            {/* Avatar Upload */}
-            <div>
-              <label className="block text-gray-300 mb-4">Profile Avatar</label>
-              <div className="flex items-center gap-6">
-                <img 
-                  src={uploadPreview || getAvatarUrl(currentProfile)}
-                  alt="Avatar preview"
-                  className="w-32 h-32 rounded-full object-cover shadow-2xl border-4 border-white/20"
-                />
-                <div className="flex-1">
-                  <input 
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    ref={fileInputRef}
-                    className="hidden"
-                  />
-                  <button 
-                    onClick={() => fileInputRef.current?.click()}
-                    className="px-10 py-4 bg-red-600 rounded-lg font-bold hover:bg-red-700 transition shadow-lg block mb-3"
-                  >
-                    Upload New Photo
-                  </button>
-                  <p className="text-gray-400 text-sm">
-                    Square image recommended • Max 5MB • JPEG/PNG
-                  </p>
-                  {uploadPreview && (
-                    <p className="text-green-400 text-sm mt-3 flex items-center gap-2">
-                      <Check size={20} /> Photo uploaded successfully!
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-
             {/* Kids Mode Toggle */}
             <div className="flex items-center justify-between py-4">
               <div>
@@ -545,7 +462,6 @@ function ManageProfile() {
               </label>
             </div>
 
-            {/* Kids Mode Notice */}
             {currentProfile.isKids && (
               <div className="bg-green-900/30 rounded-2xl p-6 border border-green-600/40">
                 <p className="text-green-400 font-bold mb-2">Kids Mode Active</p>
@@ -553,7 +469,6 @@ function ManageProfile() {
               </div>
             )}
 
-            {/* Recommended Age */}
             {currentProfile.isKids && (
               <div>
                 <label className="block text-gray-300 mb-4">Recommended Age</label>
@@ -763,7 +678,7 @@ function ManageProfile() {
           </div>
         )}
 
-        {/* Age Rating Selector Modal - NEAT, PROFESSIONAL & SCROLLABLE */}
+        {/* Age Rating Selector Modal */}
         {showMaturity && (
           <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center px-4 overflow-y-auto py-8">
             <div className="bg-zinc-900 rounded-3xl w-full max-w-lg border border-zinc-800 shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -798,7 +713,6 @@ function ManageProfile() {
                 </div>
               </div>
 
-              {/* Sticky Buttons at Bottom */}
               <div className="sticky bottom-0 bg-zinc-900 border-t border-zinc-800 p-6 -mx-10 mt-8">
                 <div className="flex gap-4 max-w-md mx-auto">
                   <button

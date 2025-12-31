@@ -1,4 +1,4 @@
-// src/context/MyListContext.jsx - FULL REAL-TIME SYNC WITH SUPABASE (users table)
+// src/context/MyListContext.jsx - TRUE REAL-TIME MY LIST SYNC LIKE NETFLIX
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabase';
@@ -12,44 +12,64 @@ export function MyListProvider({ children }) {
 
   useEffect(() => {
     if (!user) {
+      // Guest mode - load from localStorage
       const saved = localStorage.getItem('myList');
-      if (saved) setMyList(JSON.parse(saved));
+      if (saved) {
+        setMyList(JSON.parse(saved));
+      }
       return;
     }
 
-    // Real-time subscription
+    // === REAL-TIME SUBSCRIPTION ===
     const channel = supabase
       .channel('my-list-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'users', filter: `id=eq.${user.uid}` }, (payload) => {
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'users', 
+        filter: `id=eq.${user.uid}` 
+      }, (payload) => {
         const data = payload.new;
         if (data.my_list) {
-          setMyList(data.my_list || []);
-          localStorage.setItem('myList', JSON.stringify(data.my_list || []));
+          const newList = data.my_list || [];
+          setMyList(newList);
+          localStorage.setItem('myList', JSON.stringify(newList));
         }
       })
       .subscribe();
 
-    // Initial fetch
-    supabase
-      .from('users')
-      .select('my_list')
-      .eq('id', user.uid)
-      .single()
-      .then(({ data, error }) => {
-        if (data?.my_list) {
-          setMyList(data.my_list);
-          localStorage.setItem('myList', JSON.stringify(data.my_list));
-        }
-        if (error && error.code !== 'PGRST116') { // ignore "no rows" error
-          console.error('My List fetch error:', error);
-        }
-      });
+    // === INITIAL FETCH FROM SUPABASE ===
+    const fetchMyList = async () => {
+      const { data, error } = await supabase
+        .from('users')
+        .select('my_list')
+        .eq('id', user.uid)
+        .single();
 
-    return () => supabase.removeChannel(channel);
+      if (error && error.code !== 'PGRST116') {
+        console.error('My List fetch error:', error);
+        return;
+      }
+
+      if (data?.my_list) {
+        setMyList(data.my_list);
+        localStorage.setItem('myList', JSON.stringify(data.my_list));
+      }
+    };
+
+    fetchMyList();
+
+    // Cleanup subscription
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const addToMyList = async (movie) => {
-    const updated = [...myList.filter(m => m.id !== movie.id), movie];
+    // Avoid duplicates
+    if (myList.some(m => m.id === movie.id)) return;
+
+    const updated = [...myList, movie];
     setMyList(updated);
     localStorage.setItem('myList', JSON.stringify(updated));
 
@@ -58,7 +78,8 @@ export function MyListProvider({ children }) {
         .from('users')
         .update({ my_list: updated })
         .eq('id', user.uid);
-      if (error) console.error('My List save error:', error);
+
+      if (error) console.error('My List add error:', error);
     }
   };
 
@@ -72,6 +93,7 @@ export function MyListProvider({ children }) {
         .from('users')
         .update({ my_list: updated })
         .eq('id', user.uid);
+
       if (error) console.error('My List remove error:', error);
     }
   };
@@ -88,4 +110,3 @@ export function MyListProvider({ children }) {
 export function useMyList() {
   return useContext(MyListContext);
 }
-

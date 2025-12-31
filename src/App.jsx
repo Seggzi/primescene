@@ -19,14 +19,15 @@ import AccountSettings from './pages/AccountSettings';
 import HelpCenter from './pages/HelpCenter';
 import MovieDetailPage from './pages/MovieDetailPage';
 import PlayerPage from './pages/PlayerPage';
+import Notifications from './pages/Notifications';
 
-import { supabase } from './supabase'; // <-- Added for force logout
+import { supabase } from './supabase';
+
 
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const base = 'https://api.themoviedb.org/3';
 
-
-// --- GENRE BAR COMPONENT (Responsive fix for mobile sidebar) ---
+// --- GENRE BAR COMPONENT ---
 function GenreBar({ activeGenre, onGenreSelect }) {
   const genres = [
     "All", "African", "Horror", "Romantic", "Action", "Comedy", "Sci-Fi", "Documentary", "Mystery", "Crime"
@@ -296,21 +297,33 @@ function Landing() {
   );
 }
 
+// Improved ProtectedRoute
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center text-3xl">
-        Loading...
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <p className="text-white text-2xl">Loading...</p>
       </div>
     );
   }
 
-  return user ? children : <Landing />;
+  // If not logged in and not on public pages → go to login
+  if (!user && !['/', '/login'].includes(location.pathname)) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  // If logged in and on login or root → go to home
+  if (user && ['/', '/login'].includes(location.pathname)) {
+    return <Navigate to="/home" replace />;
+  }
+
+  return children;
 }
 
-// --- HOME PAGE (Your 31 rows + Advanced Genre Features) ---
+// --- HOME PAGE ---
 function Home() {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -382,23 +395,18 @@ function Home() {
       <div>
         <Banner onPlay={openModal} onInfo={openModal} />
 
-        {/* Genre Bar Added */}
         <GenreBar activeGenre={selectedGenre} onGenreSelect={setSelectedGenre} />
 
         <div className="pb-20 px-4 sm:px-6 lg:px-12 space-y-12 mt-4 relative z-10">
-
-          {/* === ALL GENRE: Your Original 31 Rows === */}
           {selectedGenre === "All" && (
             <>
-              {/* Dynamic Top 10 Movies (changes weekly) */}
               <Row
                 title="Top 10 Movies This Week"
                 fetchUrl={`${base}/discover/tv?api_key=${API_KEY}&with_networks=213`}
                 onCardClick={openModal}
-                isNumbered={true}  // Add this prop to show 1-10 numbers
+                isNumbered={true}
               />
 
-              {/* Dynamic Top 10 TV Shows (changes weekly) */}
               <Row
                 title="Top 10 TV Shows This Week"
                 fetchUrl={`${base}/trending/tv/week?api_key=${API_KEY}`}
@@ -411,8 +419,6 @@ function Home() {
                 onCardClick={openModal}
               />
               {myList.length > 0 && (
-
-
                 <Row title="Continue Watching" isMyList={true} movies={myList} onCardClick={openModal} />
               )}
               <Row title="Trending Now" fetchUrl={`${base}/trending/all/week?api_key=${API_KEY}`} onCardClick={openModal} />
@@ -449,7 +455,6 @@ function Home() {
             </>
           )}
 
-          {/* === AFRICAN GENRE: Special Layout === */}
           {selectedGenre === "African" && (
             <div className="pt-10 space-y-16">
               <div className="border-l-8 border-red-600 pl-6 mb-12">
@@ -462,11 +467,9 @@ function Home() {
               <Row title="South African Hits 🇿🇦" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_origin_country=ZA`} onCardClick={openModal} />
               <Row title="Ghanaian Cinema 🇬🇭" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_origin_country=GH`} onCardClick={openModal} />
               <Row title="East African Stories" fetchUrl={`${base}/discover/movie?api_key=${API_KEY}&with_origin_country=KE`} onCardClick={openModal} />
-
             </div>
           )}
 
-          {/* === HORROR GENRE: Special Layout === */}
           {selectedGenre === "Horror" && (
             <div className="pt-10 space-y-16">
               <div className="border-l-8 border-red-600 pl-6 mb-12">
@@ -480,7 +483,6 @@ function Home() {
             </div>
           )}
 
-          {/* === OTHER GENRES: Infinite Scroll Grid === */}
           {selectedGenre !== "All" && selectedGenre !== "African" && selectedGenre !== "Horror" && (
             <div className="pt-10 space-y-12">
               <div className="border-l-8 border-red-600 pl-6 mb-12">
@@ -505,7 +507,6 @@ function Home() {
               )}
             </div>
           )}
-
         </div>
 
         <Modal isOpen={modalOpen} onClose={closeModal}>
@@ -515,6 +516,7 @@ function Home() {
     </ProtectedRoute>
   );
 }
+
 // --- MY LIST PAGE ---
 function MyListPage() {
   const { myList } = useMyList();
@@ -600,14 +602,8 @@ function CategoryPage({ title, rows }) {
   );
 }
 
-// --- APP COMPONENT WITH FORCE LOGOUT ---
+// --- APP COMPONENT ---
 function App() {
-  // FORCE LOGOUT ALL OLD USERS + CLEAR LOCAL DATA ON APP LOAD
-  useEffect(() => {
-    localStorage.clear();
-    supabase.auth.signOut();
-  }, []);
-
   const { user } = useAuth();
 
   return (
@@ -616,67 +612,59 @@ function App() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={user ? <Home /> : <Landing />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/details/:type/:id" element={<MovieDetailPage />} />
-        <Route path="/watch/:type/:id" element={<PlayerPage />} />
-        <Route path="/search" element={<SearchPage />} />
-
-        <Route path="/tv-shows" element={
-          <CategoryPage
-            title="TV Shows"
-            rows={[
-              { title: "Popular TV Shows", fetchUrl: `${base}/tv/popular?api_key=${API_KEY}` },
-              { title: "Top Rated TV Shows", fetchUrl: `${base}/tv/top_rated?api_key=${API_KEY}` },
-              { title: "Airing Today", fetchUrl: `${base}/tv/airing_today?api_key=${API_KEY}` },
-              { title: "On The Air", fetchUrl: `${base}/tv/on_the_air?api_key=${API_KEY}` },
-            ]}
-          />
-        } />
-        <Route path="/movies" element={
-          <CategoryPage
-            title="Movies"
-            rows={[
-              { title: "Popular Movies", fetchUrl: `${base}/movie/popular?api_key=${API_KEY}` },
-              { title: "Top Rated Movies", fetchUrl: `${base}/movie/top_rated?api_key=${API_KEY}` },
-              { title: "Now Playing", fetchUrl: `${base}/movie/now_playing?api_key=${API_KEY}` },
-              { title: "Upcoming Movies", fetchUrl: `${base}/movie/upcoming?api_key=${API_KEY}` },
-            ]}
-          />
-        } />
-        <Route path="/animation" element={
-          <CategoryPage
-            title="Animation"
-            rows={[
-              { title: "Animated Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=16` },
-              { title: "Family Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=10751` },
-              { title: "Animated TV Shows", fetchUrl: `${base}/discover/tv?api_key=${API_KEY}&with_genres=16` },
-            ]}
-          />
-        } />
-        <Route path="/novels" element={
-          <CategoryPage
-            title="Novels"
-            rows={[
-              { title: "Drama Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=18` },
-              { title: "Romance Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=10749` },
-              { title: "Historical Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=36` },
-            ]}
-          />
-        } />
-        <Route path="/most-watched" element={
-          <CategoryPage
-            title="Most Watched"
-            rows={[
-              { title: "Trending This Week", fetchUrl: `${base}/trending/all/week?api_key=${API_KEY}` },
-              { title: "Trending Today", fetchUrl: `${base}/trending/all/day?api_key=${API_KEY}` },
-              { title: "Popular Overall", fetchUrl: `${base}/movie/popular?api_key=${API_KEY}` },
-            ]}
-          />
-        } />
-        <Route path="/manage-profile" element={<ManageProfile />} />
-        <Route path="/account-settings" element={<AccountSettings />} />
+        <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+        <Route path="/details/:type/:id" element={<ProtectedRoute><MovieDetailPage /></ProtectedRoute>} />
+        <Route path="/watch/:type/:id" element={<ProtectedRoute><PlayerPage /></ProtectedRoute>} />
+        <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
+        <Route path="/my-list" element={<ProtectedRoute><MyListPage /></ProtectedRoute>} />
+        <Route path="/manage-profile" element={<ProtectedRoute><ManageProfile /></ProtectedRoute>} />
+        <Route path="/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
         <Route path="/help-center" element={<HelpCenter />} />
-        <Route path="/my-list" element={<MyListPage />} />
+        <Route path="/notifications" element={<Notifications />} />
+
+        {/* Category routes - all protected */}
+        <Route path="/tv-shows" element={<ProtectedRoute><CategoryPage
+          title="TV Shows"
+          rows={[
+            { title: "Popular TV Shows", fetchUrl: `${base}/tv/popular?api_key=${API_KEY}` },
+            { title: "Top Rated TV Shows", fetchUrl: `${base}/tv/top_rated?api_key=${API_KEY}` },
+            { title: "Airing Today", fetchUrl: `${base}/tv/airing_today?api_key=${API_KEY}` },
+            { title: "On The Air", fetchUrl: `${base}/tv/on_the_air?api_key=${API_KEY}` },
+          ]}
+        /></ProtectedRoute>} />
+        <Route path="/movies" element={<ProtectedRoute><CategoryPage
+          title="Movies"
+          rows={[
+            { title: "Popular Movies", fetchUrl: `${base}/movie/popular?api_key=${API_KEY}` },
+            { title: "Top Rated Movies", fetchUrl: `${base}/movie/top_rated?api_key=${API_KEY}` },
+            { title: "Now Playing", fetchUrl: `${base}/movie/now_playing?api_key=${API_KEY}` },
+            { title: "Upcoming Movies", fetchUrl: `${base}/movie/upcoming?api_key=${API_KEY}` },
+          ]}
+        /></ProtectedRoute>} />
+        <Route path="/animation" element={<ProtectedRoute><CategoryPage
+          title="Animation"
+          rows={[
+            { title: "Animated Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=16` },
+            { title: "Family Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=10751` },
+            { title: "Animated TV Shows", fetchUrl: `${base}/discover/tv?api_key=${API_KEY}&with_genres=16` },
+          ]}
+        /></ProtectedRoute>} />
+        <Route path="/novels" element={<ProtectedRoute><CategoryPage
+          title="Novels"
+          rows={[
+            { title: "Drama Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=18` },
+            { title: "Romance Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=10749` },
+            { title: "Historical Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=36` },
+          ]}
+        /></ProtectedRoute>} />
+        <Route path="/most-watched" element={<ProtectedRoute><CategoryPage
+          title="Most Watched"
+          rows={[
+            { title: "Trending This Week", fetchUrl: `${base}/trending/all/week?api_key=${API_KEY}` },
+            { title: "Trending Today", fetchUrl: `${base}/trending/all/day?api_key=${API_KEY}` },
+            { title: "Popular Overall", fetchUrl: `${base}/movie/popular?api_key=${API_KEY}` },
+          ]}
+        /></ProtectedRoute>} />
       </Routes>
     </div>
   );

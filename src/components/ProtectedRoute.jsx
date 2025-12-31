@@ -13,14 +13,19 @@ function ProtectedRoute({ children }) {
     );
   }
 
-  // Allow access to login page even if not logged in
-  if (!user && location.pathname !== '/login' && location.pathname !== '/') {
-    return <Navigate to="/login" replace state={{ from: location }} />;
+  // Public pages
+  if (!user && (location.pathname === '/' || location.pathname === '/login')) {
+    return children;
   }
 
-  // If user is logged in and trying to go to login or root, send to home
-  if (user && (location.pathname === '/login' || location.pathname === '/')) {
+  // Redirect logged-in user from public pages to home
+  if (user && (location.pathname === '/' || location.pathname === '/login')) {
     return <Navigate to="/home" replace />;
+  }
+
+  // Require login for protected pages
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   return children;
