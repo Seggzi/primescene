@@ -7,13 +7,11 @@ import { MyListProvider } from './context/MyListContext.jsx';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
-        <MyListProvider>
-          <App />
-        </MyListProvider>
-      </AuthProvider>
-    </BrowserRouter>
-  </React.StrictMode>
+  <BrowserRouter>
+    <AuthProvider>
+      <MyListProvider>
+        <App />
+      </MyListProvider>
+    </AuthProvider>
+  </BrowserRouter>
 );
