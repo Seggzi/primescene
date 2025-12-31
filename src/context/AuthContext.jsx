@@ -1,4 +1,5 @@
-// src/context/AuthContext.jsx - FIXED FOR CROSS-DEVICE SYNC + NO FORCED LOGOUT
+// src/context/AuthContext.jsx - FIXED LOGOUT
+
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 
@@ -9,42 +10,31 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+    // Check active session
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
-    };
-
-    getSession();
+    });
 
     // Listen for auth changes
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setLoading(false);
-
-      if (event === 'SIGNED_IN') {
-        // Optional: clear localStorage to force fresh sync
-        localStorage.removeItem('profiles');
-        localStorage.removeItem('myList');
-        localStorage.removeItem('stats');
-        localStorage.removeItem('activity');
-      }
     });
 
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  const signOut = async () => {
+  const logout = async () => {
     await supabase.auth.signOut();
-    localStorage.clear();
     setUser(null);
+    localStorage.clear(); // Optional: clear saved data
   };
 
   const value = {
     user,
     loading,
-    signOut,
+    logout // ← NOW PROPERLY EXPORTED
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -19,6 +19,14 @@ export function MyListProvider({ children }) {
       }
       return;
     }
+    useEffect(() => {
+  if (!user) {
+    setNotifications([]); // or load from localStorage if you want
+    return;
+  }
+
+  // Only then do the fetch and realtime subscription
+}, [user]);
 
     // === REAL-TIME SUBSCRIPTION ===
     const channel = supabase
