@@ -1,12 +1,13 @@
+// src/main.jsx - FIXED: NO MORE INVALID HOOK CALL
+
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App.jsx';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { MyListProvider } from './context/MyListContext.jsx';
-import { NotificationProvider } from './context/NotificationContext.jsx'; // ← MUST BE CORRECT PATH
+import { NotificationProvider } from './context/NotificationContext.jsx';
 import './index.css';
-
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
