@@ -16,15 +16,8 @@ export function NotificationProvider({ children }) {
       return;
     }
 
-    useEffect(() => {
-      if (!user) {
-        setNotifications([]); // or load from localStorage if you want
-        return;
-      }
-
-      // Only then do the fetch and realtime subscription
-    }, [user]);
-
+    
+    
 
     // Real-time sync
     const channel = supabase
@@ -38,7 +31,7 @@ export function NotificationProvider({ children }) {
         if (payload.eventType === 'INSERT') {
           setNotifications(prev => [payload.new, ...prev]);
         } else if (payload.eventType === 'UPDATE') {
-          setNotifications(prev =>
+          setNotifications(prev => 
             prev.map(n => n.id === payload.new.id ? payload.new : n)
           );
         } else if (payload.eventType === 'DELETE') {

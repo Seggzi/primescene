@@ -1,5 +1,3 @@
-// src/main.jsx - FIXED: NO MORE INVALID HOOK CALL
-
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';

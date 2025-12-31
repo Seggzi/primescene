@@ -8,7 +8,6 @@ import {
   Smartphone, Zap, Calendar, ChevronRight, Edit, Save, Plus, 
   Trash2, AlertTriangle, Lock 
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 
 function ManageProfile() {
