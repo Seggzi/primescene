@@ -89,5 +89,3 @@ export function useMyList() {
   return useContext(MyListContext);
 }
 
-// After successful save
-window.location.reload(); // forces instant sync on other tabs/devices
