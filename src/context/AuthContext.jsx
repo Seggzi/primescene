@@ -1,4 +1,4 @@
-// src/context/AuthContext.jsx - FIXED FOR 'users' TABLE + BETTER LOADING
+// src/context/AuthContext.jsx - FIXED FOR CROSS-DEVICE SYNC
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabase';
@@ -10,28 +10,35 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Get current session
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-      setLoading(false);
-    };
-
-    getSession();
-
-    // Listen for auth changes
-    const { data: listener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    // Listen for auth changes
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setUser(session?.user ?? null);
+        // Force reload data from Supabase on sign in
+        localStorage.removeItem('profiles');
+        localStorage.removeItem('myList');
+        localStorage.removeItem('stats');
+        localStorage.removeItem('activity');
+        window.location.reload(); // Ensures fresh data from Supabase
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        localStorage.clear();
+      }
+      setLoading(false);
+    });
+
+    return () => listener.subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    localStorage.clear();
     setUser(null);
   };
 
