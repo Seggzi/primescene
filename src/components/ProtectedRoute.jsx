@@ -7,12 +7,12 @@ function ProtectedRoute({ children }) {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-red-600"></div>
+        <p className="text-white text-2xl">Loading...</p>
       </div>
     );
   }
 
-  return user ? children : <Navigate to="/" replace />;
+  return user ? children : <Navigate to="/login" replace />;
 }
 
 export default ProtectedRoute;

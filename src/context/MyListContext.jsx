@@ -1,4 +1,4 @@
-// src/context/MyListContext.jsx - FULL REAL-TIME SYNC WITH SUPABASE
+// src/context/MyListContext.jsx - FULL REAL-TIME SYNC WITH SUPABASE (users table)
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../supabase';
@@ -10,7 +10,6 @@ export function MyListProvider({ children }) {
   const [myList, setMyList] = useState([]);
   const { user } = useAuth();
 
-  // Load from localStorage + Supabase
   useEffect(() => {
     if (!user) {
       const saved = localStorage.getItem('myList');
@@ -21,7 +20,7 @@ export function MyListProvider({ children }) {
     // Real-time subscription
     const channel = supabase
       .channel('my-list-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'user', filter: `id=eq.${user.uid}` }, (payload) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users', filter: `id=eq.${user.uid}` }, (payload) => {
         const data = payload.new;
         if (data.my_list) {
           setMyList(data.my_list || []);
@@ -32,14 +31,17 @@ export function MyListProvider({ children }) {
 
     // Initial fetch
     supabase
-      .from('user')
+      .from('users')
       .select('my_list')
       .eq('id', user.uid)
       .single()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
         if (data?.my_list) {
           setMyList(data.my_list);
           localStorage.setItem('myList', JSON.stringify(data.my_list));
+        }
+        if (error && error.code !== 'PGRST116') { // ignore "no rows" error
+          console.error('My List fetch error:', error);
         }
       });
 
@@ -47,13 +49,13 @@ export function MyListProvider({ children }) {
   }, [user]);
 
   const addToMyList = async (movie) => {
-    const updated = [...myList.filter(m => m.id !== movie.id), movie]; // avoid duplicates
+    const updated = [...myList.filter(m => m.id !== movie.id), movie];
     setMyList(updated);
     localStorage.setItem('myList', JSON.stringify(updated));
 
     if (user) {
       const { error } = await supabase
-        .from('user')
+        .from('users')
         .update({ my_list: updated })
         .eq('id', user.uid);
       if (error) console.error('My List save error:', error);
@@ -67,7 +69,7 @@ export function MyListProvider({ children }) {
 
     if (user) {
       const { error } = await supabase
-        .from('user')
+        .from('users')
         .update({ my_list: updated })
         .eq('id', user.uid);
       if (error) console.error('My List remove error:', error);
