@@ -1,4 +1,4 @@
-// src/pages/Login.jsx - FULLY MIGRATED TO SUPABASE + 20s delayed popunder after login
+// src/pages/Login.jsx - FULLY MIGRATED TO SUPABASE (no ads)
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -53,14 +53,6 @@ function Login() {
         error = signInError;
       }
       if (error) throw error;
-
-      // After successful login → wait 20 seconds then trigger popunder ad
-      setTimeout(() => {
-        const script = document.createElement('script');
-        script.src = 'https://pl28458898.effectivegatecpm.com/58/40/73/584073080b037630e29cd53502254a35.js';
-        script.async = true;
-        document.body.appendChild(script);
-      }, 20000);
 
       navigate('/home');
     } catch (err) {

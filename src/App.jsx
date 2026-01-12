@@ -29,12 +29,6 @@ import { supabase } from './supabase';
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const base = 'https://api.themoviedb.org/3';
 
-// Adsterra Banner 468x60 code (visible rectangle ad)
-const BANNER_SCRIPT = `
-  <script> atOptions = { 'key' : 'afad37c60aea88e71465c8b32d56d921', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} }; </script>
-  <script src="https://www.highperformanceformat.com/afad37c60aea88e71465c8b32d56d921/invoke.js"></script>
-`;
-
 // --- GENRE BAR COMPONENT ---
 function GenreBar({ activeGenre, onGenreSelect }) {
   const genres = [
@@ -614,43 +608,6 @@ function CategoryPage({ title, rows }) {
 function App() {
   const { user } = useAuth();
   const location = useLocation();
-
-  // Function to trigger the Adsterra Banner 468x60
-  const triggerBanner = () => {
-    const container = document.createElement('div');
-    container.innerHTML = `
-      <script> atOptions = { 'key' : 'afad37c60aea88e71465c8b32d56d921', 'format' : 'iframe', 'height' : 60, 'width' : 468, 'params' : {} }; </script>
-      <script src="https://www.highperformanceformat.com/afad37c60aea88e71465c8b32d56d921/invoke.js"></script>
-    `;
-    document.body.appendChild(container);
-    console.log('Adsterra Banner 468x60 triggered!');
-  };
-
-  // 1. After successful login – delay 10–20 seconds
-  useEffect(() => {
-    if (user && location.pathname === '/home') {
-      const randomDelay = Math.floor(Math.random() * (20000 - 10000 + 1)) + 10000; // 10–20 seconds
-      const timer = setTimeout(() => {
-        triggerBanner();
-      }, randomDelay);
-
-      return () => clearTimeout(timer);
-    }
-  }, [user, location.pathname]);
-
-  // 2. When trying to play trailer/movie – trigger on /watch routes
-  useEffect(() => {
-    if (location.pathname.startsWith('/watch')) {
-      triggerBanner();
-    }
-  }, [location.pathname]);
-
-  // 3. When opening movie details – trigger on /details or /movie routes
-  useEffect(() => {
-    if (location.pathname.startsWith('/details') || location.pathname.startsWith('/movie')) {
-      triggerBanner();
-    }
-  }, [location.pathname]);
 
   return (
     <div className="bg-black text-white min-h-screen">
