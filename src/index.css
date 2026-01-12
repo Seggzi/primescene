@@ -67,3 +67,12 @@ body {
   -webkit-box-orient: vertical;  
   overflow: hidden;
 }
+
+iframe[height="60"][width="468"] {
+  position: fixed !important;
+  bottom: 20px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  z-index: 9999 !important;
+  border: 2px solid red !important; /* for testing */
+}
