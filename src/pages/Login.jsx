@@ -1,8 +1,8 @@
-// src/pages/Login.jsx - FULLY MIGRATED TO SUPABASE (Google + Email/Password + Forgot Password)
+// src/pages/Login.jsx - FULLY MIGRATED TO SUPABASE + 20s delayed popunder after login
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../supabase'; // Your supabase client
+import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
 
 function Login() {
@@ -15,7 +15,6 @@ function Login() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // Auto-redirect if already logged in
   useEffect(() => {
     if (user) {
       navigate('/home');
@@ -29,7 +28,7 @@ function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: window.location.origin + '/home', // Redirect after login
+          redirectTo: window.location.origin + '/home',
         },
       });
       if (error) throw error;
@@ -54,6 +53,16 @@ function Login() {
         error = signInError;
       }
       if (error) throw error;
+
+      // After successful login → wait 20 seconds then trigger popunder ad
+      setTimeout(() => {
+        const script = document.createElement('script');
+        script.src = 'https://pl28458898.effectivegatecpm.com/58/40/73/584073080b037630e29cd53502254a35.js';
+        script.async = true;
+        document.body.appendChild(script);
+      }, 20000);
+
+      navigate('/home');
     } catch (err) {
       setError(
         err.message.includes('Invalid login credentials') || err.message.includes('Email not confirmed')
@@ -74,7 +83,7 @@ function Login() {
     setError('');
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/login', // Back to login after reset
+        redirectTo: window.location.origin + '/login',
       });
       if (error) throw error;
       setSuccess('Check your email for password reset link!');
