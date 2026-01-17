@@ -1,9 +1,10 @@
-// src/pages/Login.jsx - FULLY MIGRATED TO SUPABASE (no ads)
+// src/pages/Login.jsx - ADVANCED & BEAUTIFUL VERSION
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabase';
 import { useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -12,13 +13,12 @@ function Login() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      navigate('/home');
-    }
+    if (user) navigate('/home');
   }, [user, navigate]);
 
   const handleGoogle = async () => {
@@ -34,6 +34,7 @@ function Login() {
       if (error) throw error;
     } catch (err) {
       setError('Google sign-in failed. Try again.');
+    } finally {
       setLoading(false);
     }
   };
@@ -42,116 +43,163 @@ function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
+
+    // Basic validation
+    if (!email.includes('@') || !email.includes('.')) {
+      setError('Please enter a valid email');
+      setLoading(false);
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      setLoading(false);
+      return;
+    }
+
     try {
       let error;
       if (isRegister) {
         const { error: signUpError } = await supabase.auth.signUp({ email, password });
         error = signUpError;
-        if (!error) setSuccess('Check your email to confirm your account!');
+        if (!error) setSuccess('Check your email to confirm account!');
       } else {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
         error = signInError;
       }
       if (error) throw error;
-
       navigate('/home');
     } catch (err) {
-      setError(
-        err.message.includes('Invalid login credentials') || err.message.includes('Email not confirmed')
-          ? 'Invalid email or password'
-          : err.message || 'Something went wrong. Try again.'
-      );
+      setError(err.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }
   };
 
   const handleForgotPassword = async () => {
-    if (!email) {
-      setError('Enter your email first');
-      return;
-    }
+    if (!email) return setError('Enter your email first');
     setLoading(true);
-    setError('');
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: window.location.origin + '/login',
       });
       if (error) throw error;
-      setSuccess('Check your email for password reset link!');
+      setSuccess('Password reset link sent!');
     } catch (err) {
-      setError('Failed to send reset email. Check your email address.');
+      setError('Failed to send reset email');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen relative overflow-hidden bg-black">
+    <div className="min-h-screen relative bg-gradient-to-br from-black via-red-950/30 to-black overflow-hidden">
+      {/* Animated Background */}
       <div className="absolute inset-0">
         <img 
           src="https://files.catbox.moe/843del.png" 
           alt="Background"
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover opacity-70 animate-pulse-slow"
         />
-        <div className="absolute inset-0 bg-black/60"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
       </div>
 
-      <div className="relative z-10 flex items-start justify-center pt-20 sm:pt-32 md:pt-40 min-h-screen px-4">
-        <div className="w-full max-w-md bg-black/75 rounded-lg p-8 sm:p-16">
-          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-8">
-            {isRegister ? 'Create Account' : 'Sign In'}
+      <div className="relative z-10 flex items-center justify-center min-h-screen px-6 py-12">
+        <div className="w-full max-w-md bg-black/75 backdrop-blur-xl rounded-3xl p-8 md:p-12 shadow-2xl border border-red-900/50 animate-fade-in-up">
+          <h1 className="text-4xl font-extrabold text-white mb-2 text-center tracking-tight">
+            {isRegister ? 'Join PrimeScene' : 'Welcome Back'}
           </h1>
+          <p className="text-gray-400 text-center mb-10">
+            {isRegister ? 'Create your account' : 'Sign in to continue watching'}
+          </p>
 
-          {error && <p className="text-red-500 bg-red-900/50 p-4 rounded mb-4">{error}</p>}
-          {success && <p className="text-green-500 bg-green-900/50 p-4 rounded mb-4">{success}</p>}
+          {error && (
+            <div className="bg-red-900/50 text-red-200 p-4 rounded-xl mb-6 text-center animate-shake">
+              {error}
+            </div>
+          )}
+          {success && (
+            <div className="bg-green-900/50 text-green-200 p-4 rounded-xl mb-6 text-center">
+              {success}
+            </div>
+          )}
 
           <form onSubmit={handleEmail} className="space-y-6">
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-4 bg-gray-700 text-white rounded focus:outline-none focus:bg-gray-600"
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-4 bg-gray-700 text-white rounded focus:outline-none focus:bg-gray-600"
-              required
-              minLength="6"
-            />
+            <div className="relative">
+              <Mail className="absolute left-4 top-4 text-gray-400" size={20} />
+              <input
+                type="email"
+                placeholder="Email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 bg-zinc-900/80 border border-zinc-700 rounded-xl text-white placeholder-gray-500 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition-all"
+                required
+              />
+            </div>
+
+            <div className="relative">
+              <Lock className="absolute left-4 top-4 text-gray-400" size={20} />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-12 pr-12 py-4 bg-zinc-900/80 border border-zinc-700 rounded-xl text-white placeholder-gray-500 focus:border-red-600 focus:ring-1 focus:ring-red-600 outline-none transition-all"
+                required
+                minLength="6"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-4 text-gray-400 hover:text-white transition"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
 
             <button 
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-red-600 text-white font-bold rounded hover:bg-red-700 transition text-lg disabled:opacity-70"
+              className="w-full py-4 bg-gradient-to-r from-red-700 to-red-500 text-white font-bold rounded-xl hover:from-red-600 hover:to-red-400 transition-all transform hover:scale-[1.02] disabled:opacity-60 disabled:scale-100 flex items-center justify-center gap-3 shadow-lg"
             >
-              {loading ? 'Please wait...' : (isRegister ? 'Sign Up' : 'Sign In')}
+              {loading ? (
+                <>
+                  <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  {isRegister ? 'Create Account' : 'Sign In'}
+                  <ArrowRight size={20} />
+                </>
+              )}
             </button>
 
             {!isRegister && (
               <button
                 type="button"
                 onClick={handleForgotPassword}
-                className="text-white/70 hover:underline text-sm block text-center"
+                className="text-red-400 hover:text-red-300 text-sm block w-full text-center mt-3 transition"
               >
                 Forgot password?
               </button>
             )}
           </form>
 
-          <div className="my-8 text-center text-white/70">or</div>
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-zinc-700"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-black text-gray-500">or</span>
+            </div>
+          </div>
 
           <button 
             onClick={handleGoogle}
             disabled={loading}
-            className="w-full py-4 bg-white text-black font-bold rounded hover:bg-gray-200 transition flex items-center justify-center gap-3 disabled:opacity-70"
+            className="w-full py-4 bg-white text-black font-bold rounded-xl hover:bg-gray-100 transition-all flex items-center justify-center gap-3 shadow-md disabled:opacity-60"
           >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -160,7 +208,7 @@ function Login() {
             Continue with Google
           </button>
 
-          <p className="text-center text-white/70 mt-8">
+          <p className="text-center text-gray-400 mt-8">
             {isRegister ? 'Already have an account?' : 'New to PrimeScene?'}
             <button 
               onClick={() => {
@@ -168,13 +216,14 @@ function Login() {
                 setError('');
                 setSuccess('');
               }}
-              className="text-white hover:underline ml-2 font-bold"
+              className="text-red-500 hover:text-red-400 ml-2 font-semibold transition"
             >
               {isRegister ? 'Sign In' : 'Sign Up'}
             </button>
           </p>
         </div>
       </div>
+
     </div>
   );
 }

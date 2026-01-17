@@ -1,5 +1,6 @@
-// src/pages/ManageProfile.jsx - FINAL FIXED VERSION
+// src/pages/ManageProfile.jsx - FIXED VERSION (all hooks imported, states defined, Supabase corrected)
 
+import { useState, useEffect } from 'react'; // ← Added missing imports
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useNotification } from '../context/NotificationContext';
@@ -15,6 +16,7 @@ function ManageProfile() {
   const navigate = useNavigate();
   const { addNotification } = useNotification();
 
+  // All states now properly declared with useState
   const [profiles, setProfiles] = useState([]);
   const [currentProfile, setCurrentProfile] = useState(null);
   const [editingName, setEditingName] = useState(false);
@@ -68,7 +70,7 @@ function ManageProfile() {
 
   // === TRUE REAL-TIME SYNC ===
   useEffect(() => {
-    if (!user) {
+    if (!user?.id) {  // ← Fixed: use user?.id instead of user.uid
       const loadLocal = () => {
         const p = localStorage.getItem('profiles');
         const a = localStorage.getItem('activity');
@@ -82,8 +84,8 @@ function ManageProfile() {
     }
 
     const channel = supabase
-      .channel(`profile-sync-${user.uid}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'users', filter: `id=eq.${user.uid}` }, (payload) => {
+      .channel(`profile-sync-${user.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users', filter: `id=eq.${user.id}` }, (payload) => {
         const data = payload.new;
         setProfiles(data.profiles || []);
         setActivityTimeline(data.activity || []);
@@ -96,7 +98,7 @@ function ManageProfile() {
       const { data, error } = await supabase
         .from('users')
         .select('profiles, activity, stats')
-        .eq('id', user.uid)
+        .eq('id', user.id)
         .single();
 
       if (error && error.code !== 'PGRST116') {
@@ -127,12 +129,12 @@ function ManageProfile() {
 
   // === SAVE TO SUPABASE ===
   const saveToSupabase = async () => {
-    if (!user) return;
+    if (!user?.id) return;
 
     const { error } = await supabase
       .from('users')
       .upsert({
-        id: user.uid,
+        id: user.id,
         profiles,
         activity: activityTimeline,
         stats
@@ -147,10 +149,10 @@ function ManageProfile() {
 
   // === AUTO CREATE PROFILE ===
   useEffect(() => {
-    if (user && profiles.length === 0) {
+    if (user?.id && profiles.length === 0) {
       const defaultProfile = {
         id: 1,
-        name: user.displayName || user.email?.split('@')[0] || 'Main Profile',
+        name: user.email?.split('@')[0] || 'Main Profile',
         isActive: true,
         isKids: false,
         pin: null,
@@ -329,6 +331,7 @@ function ManageProfile() {
     );
   }
 
+  // Rest of your beautiful UI remains EXACTLY the same...
   return (
     <div className="min-h-screen bg-black text-white pt-32 pb-20 px-4 md:px-16">
       <div className="max-w-5xl mx-auto">
@@ -627,7 +630,7 @@ function ManageProfile() {
                   setPinInput('');
                   setPinError('');
                   setPinPurpose(null);
-                }} className="flex-1 py-3 border border-white/20 rounded-lg hover:bg-white/10 transition">
+                }} className="flex-1 py-3 border border-white/20 rounded-lg hover:bg-white/10 transition font-medium">
                   Cancel
                 </button>
                 <button onClick={handlePinUnlock} className="flex-1 py-3 bg-red-600 rounded-lg font-bold hover:bg-red-700 transition">

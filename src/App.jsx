@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, Navigate, useParams, useNavigate } from 'react-router-dom';
-
 import { Tv, Download, Globe, Users, ChevronLeft, Play, Plus, Check, Search, X } from 'lucide-react';
 
 import Navbar from './components/Navbar';

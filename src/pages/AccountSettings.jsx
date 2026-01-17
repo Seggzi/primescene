@@ -1,5 +1,3 @@
-// src/pages/AccountSettings.jsx - COMPACT, PROFESSIONAL, MOBILE-RESPONSIVE VERSION
-
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Check, X, CreditCard, Bell, Shield, Globe, Mail, Lock, 
@@ -7,12 +5,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { 
-  updatePassword, 
-  reauthenticateWithCredential, 
-  EmailAuthProvider,
-  updateEmail 
-} from 'firebase/auth';
+import { supabase } from '../supabase'; // ← Make sure this import exists
 
 function AccountSettings() {
   const navigate = useNavigate();
@@ -74,30 +67,27 @@ function AccountSettings() {
     }
 
     try {
-      const credential = EmailAuthProvider.credential(user.email, currentPasswordForEmail);
-      await reauthenticateWithCredential(user, credential);
-      await updateEmail(user, newEmail);
-
-      setEmailSuccess(true);
-      setEmailError('');
-      setTimeout(() => {
-        setShowEmailModal(false);
-        setNewEmail('');
-        setCurrentPasswordForEmail('');
-        setEmailSuccess(false);
-      }, 2000);
-    } catch (error) {
-      if (error.code === 'auth/wrong-password') {
-        setEmailError('Current password is incorrect');
-      } else if (error.code === 'auth/invalid-email') {
-        setEmailError('Invalid email address');
-      } else if (error.code === 'auth/email-already-in-use') {
-        setEmailError('Email already in use');
-      } else if (error.code === 'auth/requires-recent-login') {
-        setEmailError('Please log out and log in again for security');
+      // Supabase: Update email (may require recent login)
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
+      
+      if (error) {
+        if (error.message.includes('recent login')) {
+          setEmailError('For security, please log out and log in again');
+        } else {
+          throw error;
+        }
       } else {
-        setEmailError('Error: ' + error.message);
+        setEmailSuccess(true);
+        setEmailError('');
+        setTimeout(() => {
+          setShowEmailModal(false);
+          setNewEmail('');
+          setCurrentPasswordForEmail('');
+          setEmailSuccess(false);
+        }, 2000);
       }
+    } catch (error) {
+      setEmailError(error.message || 'Failed to update email');
     }
   };
 
@@ -118,27 +108,30 @@ function AccountSettings() {
     }
 
     try {
-      const credential = EmailAuthProvider.credential(user.email, currentPassword);
-      await reauthenticateWithCredential(user, credential);
-      await updatePassword(user, newPassword);
-
-      setPasswordSuccess(true);
-      setPasswordError('');
-      setTimeout(() => {
-        setShowPasswordModal(false);
-        setCurrentPassword('');
-        setNewPassword('');
-        setConfirmPassword('');
-        setPasswordSuccess(false);
-      }, 2000);
-    } catch (error) {
-      if (error.code === 'auth/wrong-password') {
-        setPasswordError('Current password is incorrect');
-      } else if (error.code === 'auth/requires-recent-login') {
-        setPasswordError('For security, please log out and log in again');
+      // Supabase: Update password (no reauthentication needed if session is fresh)
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      
+      if (error) {
+        if (error.message.includes('weak password')) {
+          setPasswordError('Password is too weak. Try a stronger one.');
+        } else if (error.message.includes('recent login')) {
+          setPasswordError('For security, please log out and log in again');
+        } else {
+          throw error;
+        }
       } else {
-        setPasswordError('Error: ' + error.message);
+        setPasswordSuccess(true);
+        setPasswordError('');
+        setTimeout(() => {
+          setShowPasswordModal(false);
+          setCurrentPassword('');
+          setNewPassword('');
+          setConfirmPassword('');
+          setPasswordSuccess(false);
+        }, 2000);
       }
+    } catch (error) {
+      setPasswordError(error.message || 'Failed to update password');
     }
   };
 
