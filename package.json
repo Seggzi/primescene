@@ -6,8 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "vercel-install": "npm install --legacy-peer-deps",
+    "vercel-build": "npm run vercel-install && npm run build"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
