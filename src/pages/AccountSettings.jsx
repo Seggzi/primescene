@@ -1,9 +1,9 @@
-// src/pages/AccountSettings.jsx - FIXED WITH OTP EMAIL & PASSWORD CHANGE
+// src/pages/AccountSettings.jsx - FULL CODE WITH REAL-TIME SYNC & OTP FIXES
 
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
-  Check, X, CreditCard, Bell, Shield, Globe, Mail, Lock, 
+  Check, CreditCard, Bell, Shield, Globe, Mail, Lock, 
   Smartphone, Download, Users, Crown, ChevronRight, Eye, EyeOff 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -11,7 +11,7 @@ import { supabase } from '../supabase';
 
 function AccountSettings() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth(); // ← signOut for optional logout
+  const { user, signOut } = useAuth(); 
 
   // === MODAL STATES ===
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -37,26 +37,93 @@ function AccountSettings() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // === NOTIFICATIONS ===
-  const [emailNotifs, setEmailNotifs] = useState(() => {
-    const saved = localStorage.getItem('emailNotifications');
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-  const [pushNotifs, setPushNotifs] = useState(() => {
-    const saved = localStorage.getItem('pushNotifications');
-    return saved !== null ? JSON.parse(saved) : false;
-  });
-  const [smsNotifs, setSmsNotifs] = useState(() => {
-    const saved = localStorage.getItem('smsNotifications');
-    return saved !== null ? JSON.parse(saved) : false;
-  });
+  // === NOTIFICATIONS (SYNCED STATE) ===
+  // We initialize these to defaults, but they will update from DB immediately
+  const [emailNotifs, setEmailNotifs] = useState(true);
+  const [pushNotifs, setPushNotifs] = useState(false);
+  const [smsNotifs, setSmsNotifs] = useState(false);
   const [notifSuccess, setNotifSuccess] = useState(false);
 
+  // === 1. SYNC LOGIC (Replaces LocalStorage) ===
   useEffect(() => {
-    localStorage.setItem('emailNotifications', JSON.stringify(emailNotifs));
-    localStorage.setItem('pushNotifications', JSON.stringify(pushNotifs));
-    localStorage.setItem('smsNotifications', JSON.stringify(smsNotifs));
-  }, [emailNotifs, pushNotifs, smsNotifs]);
+    if (!user?.id) return;
+
+    // A. Initial Fetch from Supabase
+    const fetchSettings = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('settings')
+          .eq('id', user.id)
+          .single();
+
+        if (data?.settings) {
+          setEmailNotifs(data.settings.email ?? true);
+          setPushNotifs(data.settings.push ?? false);
+          setSmsNotifs(data.settings.sms ?? false);
+        }
+      } catch (err) {
+        console.error('Error fetching settings:', err);
+      }
+    };
+    fetchSettings();
+
+    // B. Real-time Listener (Updates instantly if changed on another device)
+    const channel = supabase
+      .channel(`settings-sync-${user.id}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'users', 
+          filter: `id=eq.${user.id}` 
+        },
+        (payload) => {
+          const newSettings = payload.new.settings;
+          if (newSettings) {
+            setEmailNotifs(newSettings.email ?? true);
+            setPushNotifs(newSettings.push ?? false);
+            setSmsNotifs(newSettings.sms ?? false);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  // === 2. SAVE NOTIFICATIONS TO DB ===
+  const handleSaveNotifications = async () => {
+    // Show success immediately (Optimistic UI)
+    setNotifSuccess(true);
+
+    if (user?.id) {
+      const newSettings = {
+        email: emailNotifs,
+        push: pushNotifs,
+        sms: smsNotifs
+      };
+
+      // Save to Supabase 'users' table in the 'settings' column
+      const { error } = await supabase
+        .from('users')
+        .upsert({ 
+          id: user.id, 
+          settings: newSettings 
+        }, { onConflict: 'id' });
+
+      if (error) console.error('Error saving settings:', error);
+    }
+
+    // Close modal after delay
+    setTimeout(() => {
+      setShowNotificationsModal(false);
+      setNotifSuccess(false);
+    }, 1500);
+  };
 
   // === SEND OTP FOR EMAIL CHANGE ===
   const handleSendEmailOtp = async () => {
@@ -93,12 +160,12 @@ function AccountSettings() {
       const { data, error: verifyError } = await supabase.auth.verifyOtp({
         email: newEmail,
         token: emailOtp.trim(),
-        type: 'email_change' // Special type for email change OTP
+        type: 'email_change'
       });
 
       if (verifyError) throw verifyError;
 
-      addNotification('Email updated successfully!', 'success');
+      // Reset states
       setShowEmailModal(false);
       setNewEmail('');
       setEmailOtp('');
@@ -165,7 +232,7 @@ function AccountSettings() {
       if (updateError) throw updateError;
 
       setPasswordSuccess(true);
-      setTimeout(() => {
+      setTimeout(async () => {
         setShowPasswordModal(false);
         setPasswordOtp('');
         setNewPassword('');
@@ -173,24 +240,16 @@ function AccountSettings() {
         setPasswordOtpSent(false);
         setPasswordSuccess(false);
         setPasswordError('');
+        
+        // Logout for security
+        await signOut();
+        navigate('/login');
       }, 2000);
-
-      // Optional: logout for security
-      await signOut();
-      navigate('/login');
     } catch (err) {
       setPasswordError(err.message || 'Failed to update password');
     } finally {
       setPasswordLoading(false);
     }
-  };
-
-  const handleSaveNotifications = () => {
-    setNotifSuccess(true);
-    setTimeout(() => {
-      setShowNotificationsModal(false);
-      setNotifSuccess(false);
-    }, 1500);
   };
 
   return (
@@ -396,7 +455,8 @@ function AccountSettings() {
                     </button>
                   </div>
 
-                  {passwordError && <p className="text-red-500 text-center">{passwordError}</p>}
+                  {passwordError && <p className="text-red-500 text-center mb-4">{passwordError}</p>}
+                  {passwordSuccess && <p className="text-green-500 text-center mb-4">Password Updated! Logging out...</p>}
 
                   <button
                     onClick={handleVerifyAndUpdatePassword}
@@ -431,12 +491,14 @@ function AccountSettings() {
           </div>
         )}
 
-        {/* NOTIFICATIONS MODAL */}
+        {/* NOTIFICATIONS MODAL (Synced) */}
         {showNotificationsModal && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 px-4">
             <div className="bg-zinc-900 rounded-3xl p-8 max-w-md w-full border border-white/20 shadow-2xl">
               <h2 className="text-2xl font-bold mb-6 text-center">Notifications</h2>
               <div className="space-y-6">
+                
+                {/* Email Toggle */}
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-semibold">Email Notifications</p>
@@ -445,14 +507,15 @@ function AccountSettings() {
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input 
                       type="checkbox" 
-                      checked={emailNotifs}
-                      onChange={() => setEmailNotifs(!emailNotifs)}
-                      className="sr-only peer"
+                      checked={emailNotifs} 
+                      onChange={() => setEmailNotifs(!emailNotifs)} 
+                      className="sr-only peer" 
                     />
                     <div className="w-12 h-6 bg-gray-700 rounded-full peer peer-checked:bg-red-600 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
                   </label>
                 </div>
 
+                {/* Push Toggle */}
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-semibold">Push Notifications</p>
@@ -461,14 +524,15 @@ function AccountSettings() {
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input 
                       type="checkbox" 
-                      checked={pushNotifs}
-                      onChange={() => setPushNotifs(!pushNotifs)}
-                      className="sr-only peer"
+                      checked={pushNotifs} 
+                      onChange={() => setPushNotifs(!pushNotifs)} 
+                      className="sr-only peer" 
                     />
                     <div className="w-12 h-6 bg-gray-700 rounded-full peer peer-checked:bg-red-600 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
                   </label>
                 </div>
 
+                {/* SMS Toggle */}
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-semibold">SMS Alerts</p>
@@ -477,19 +541,21 @@ function AccountSettings() {
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input 
                       type="checkbox" 
-                      checked={smsNotifs}
-                      onChange={() => setSmsNotifs(!smsNotifs)}
-                      className="sr-only peer"
+                      checked={smsNotifs} 
+                      onChange={() => setSmsNotifs(!smsNotifs)} 
+                      className="sr-only peer" 
                     />
                     <div className="w-12 h-6 bg-gray-700 rounded-full peer peer-checked:bg-red-600 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
                   </label>
                 </div>
               </div>
+
               {notifSuccess && (
                 <p className="text-green-400 text-center mt-6 flex items-center justify-center gap-2">
-                  <Check size={20} /> Saved!
+                  <Check size={20} /> Saved to Cloud!
                 </p>
               )}
+              
               <div className="flex gap-4 mt-10">
                 <button
                   onClick={() => setShowNotificationsModal(false)}
