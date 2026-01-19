@@ -144,15 +144,15 @@ function Landing() {
           <p className="text-lg sm:text-xl md:text-2xl mb-6 text-white/90">
             Watch anywhere. Cancel anytime.
           </p>
-          <p className="text-base sm:text-lg md:text-xl mb-10 text-white/80 max-w-2xl">
-            Ready to watch? Sign in to access your personal cinema.
+          <p className="text-base sm:text-lg md:text-xl mb-10 text-align:center text-white/80 max-w-2xl">
+            Ready to watch? Sign Up to access your personal cinema.
           </p>
 
           <Link
             to="/login"
             className="inline-block px-8 py-4 bg-red-600 text-white text-lg sm:text-xl font-bold rounded hover:bg-red-700 transition"
           >
-            Sign In to Start Watching
+            Sign Up to Start Watching
           </Link>
         </div>
       </div>
@@ -227,7 +227,7 @@ function Landing() {
           <details className="bg-gray-900 rounded-lg p-6 cursor-pointer hover:bg-gray-800 transition">
             <summary className="text-lg font-bold">Where can I watch?</summary>
             <p className="mt-4 text-white/80 leading-relaxed">
-              Watch anywhere, anytime. Sign in with your PrimeScene account to watch instantly on the web at primescene.com from your personal computer or on any internet-connected device that offers the PrimeScene app, including smart TVs, smartphones, tablets, streaming media players and game consoles.
+              Watch anywhere, anytime. Sign Up with your PrimeScene account to watch instantly on the web at primescene.com from your personal computer or on any internet-connected device that offers the PrimeScene app, including smart TVs, smartphones, tablets, streaming media players and game consoles.
             </p>
           </details>
           <details className="bg-gray-900 rounded-lg p-6 cursor-pointer hover:bg-gray-800 transition">
@@ -255,7 +255,7 @@ function Landing() {
             to="/login"
             className="inline-block px-8 py-4 bg-red-600 text-white text-lg font-bold rounded hover:bg-red-700 transition"
           >
-            Sign In to Start Watching
+            Sign Up to Start Watching
           </Link>
         </div>
       </div>
@@ -615,7 +615,12 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/" element={user ? <Home /> : <Landing />} />
         <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+        
+        {/* NEW DETAIL ROUTES - both formats supported */}
         <Route path="/details/:type/:id" element={<ProtectedRoute><MovieDetailPage /></ProtectedRoute>} />
+        <Route path="/movie/:id" element={<ProtectedRoute><MovieDetailPage /></ProtectedRoute>} />
+        <Route path="/tv/:id" element={<ProtectedRoute><MovieDetailPage /></ProtectedRoute>} />
+
         <Route path="/watch/:type/:id" element={<ProtectedRoute><PlayerPage /></ProtectedRoute>} />
         <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
         <Route path="/my-list" element={<ProtectedRoute><MyListPage /></ProtectedRoute>} />
@@ -623,7 +628,7 @@ function App() {
         <Route path="/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
         <Route path="/help-center" element={<HelpCenter />} />
         <Route path="/notifications" element={<Notifications />} />
-
+        
         {/* Category routes - all protected */}
         <Route path="/tv-shows" element={<ProtectedRoute><CategoryPage
           title="TV Shows"

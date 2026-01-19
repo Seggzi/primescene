@@ -1,4 +1,4 @@
-// src/components/Navbar.jsx - SIGN OUT WORKS & REDIRECTS TO LANDING PAGE
+// src/components/Navbar.jsx - LIVE SEARCH DROPDOWN + DIRECT TO /details/:type/:id
 
 import { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
@@ -29,38 +29,21 @@ function Navbar() {
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  const handleInputChange = (e) => {
-    const value = e.target.value;
-    setQuery(value);
-
-    if (value.trim().length > 0) {
-      navigate(`/search?q=${encodeURIComponent(value.trim())}`);
-    } else {
-      navigate(user ? '/home' : '/');
+  const handleSignOut = async () => {
+    try {
+      if (typeof logout === 'function') {
+        await logout();
+      }
+    } catch (err) {
+      console.error('Logout failed:', err);
+    } finally {
+      setProfileOpen(false);
+      closeMobileMenu();
+      navigate('/');
     }
   };
 
-  const handleKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      setSearchOpen(false);
-    }
-  };
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (searchRef.current && !searchRef.current.contains(event.target)) {
-        setSearchOpen(false);
-        setQuery('');
-        setResults([]);
-      }
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setProfileOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
+  // Live search
   useEffect(() => {
     if (!query.trim()) {
       setResults([]);
@@ -71,9 +54,19 @@ function Navbar() {
     setLoading(true);
     const timer = setTimeout(async () => {
       try {
+        const apiKey = import.meta.env.VITE_TMDB_API_KEY;
+        if (!apiKey) {
+          console.error('TMDB API key missing');
+          setResults([]);
+          return;
+        }
+
         const res = await fetch(
-          `https://api.themoviedb.org/3/search/multi?api_key=${import.meta.env.VITE_TMDB_API_KEY}&query=${encodeURIComponent(query)}&include_adult=false`
+          `https://api.themoviedb.org/3/search/multi?api_key=${apiKey}&query=${encodeURIComponent(query)}&include_adult=false`
         );
+
+        if (!res.ok) throw new Error('TMDB API error');
+
         const data = await res.json();
         setResults(data.results?.slice(0, 8) || []);
       } catch (err) {
@@ -87,6 +80,20 @@ function Navbar() {
     return () => clearTimeout(timer);
   }, [query]);
 
+  // Close on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setSearchOpen(false);
+      }
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
     window.addEventListener('scroll', handleScroll);
@@ -98,21 +105,6 @@ function Navbar() {
     : 'Guest';
 
   const logoLink = user ? '/home' : '/';
-
-  // === SAFE SIGN OUT WITH IMMEDIATE REDIRECT ===
-  const handleSignOut = async () => {
-    try {
-      if (typeof logout === 'function') {
-        await logout();
-      }
-    } catch (err) {
-      console.error('Logout failed:', err);
-    } finally {
-      setProfileOpen(false);
-      closeMobileMenu();
-      navigate('/'); // Always redirect to landing page
-    }
-  };
 
   if (isMinimalPage) {
     return (
@@ -155,22 +147,75 @@ function Navbar() {
             </ul>
           </div>
 
-          {/* Right: Search, Bell, Profile, Mobile Menu */}
+          {/* Right Side */}
           <div className="flex items-center gap-4 sm:gap-6 text-white">
+            {/* Live Search Dropdown */}
             <div className="relative" ref={searchRef}>
               <Search
                 className="w-6 h-6 cursor-pointer hover:text-gray-300 transition"
                 onClick={toggleSearch}
               />
-              {/* Search dropdown (your existing code) */}
+
               {searchOpen && (
-                // ... your search dropdown code remains unchanged
-                <div className="absolute right-0 top-full mt-2 w-64 sm:w-80 bg-black/95 backdrop-blur-md rounded-lg shadow-2xl border border-white/10 overflow-hidden">
-                  {/* ... */}
+                <div className="absolute right-0 top-full mt-3 w-80 sm:w-96 bg-zinc-900/95 backdrop-blur-lg rounded-xl border border-zinc-700 shadow-2xl overflow-hidden z-50">
+                  {/* Search Input */}
+                  <div className="p-4 border-b border-zinc-700">
+                    <input
+                      type="text"
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
+                      placeholder="Search movies, TV shows..."
+                      className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-red-600 transition"
+                      autoFocus
+                    />
+                  </div>
+
+                  {/* Results */}
+                  <div className="max-h-96 overflow-y-auto">
+                    {loading ? (
+                      <div className="p-6 text-center text-gray-400">Searching...</div>
+                    ) : results.length > 0 ? (
+                      results.map((item) => (
+                        <Link
+                          key={item.id}
+                          to={`/details/${item.media_type}/${item.id}`}  // ← FIXED: Now goes to /details/movie/:id or /details/tv/:id
+                          className="flex items-center gap-4 p-4 hover:bg-zinc-800 transition"
+                          onClick={() => {
+                            setSearchOpen(false);
+                            setQuery('');
+                          }}
+                        >
+                          <img
+                            src={
+                              item.poster_path || item.profile_path
+                                ? `https://image.tmdb.org/t/p/w92${item.poster_path || item.profile_path}`
+                                : 'https://via.placeholder.com/46x69?text=No+Img'
+                            }
+                            alt={item.title || item.name}
+                            className="w-12 h-16 object-cover rounded"
+                          />
+                          <div>
+                            <p className="font-medium text-white">
+                              {item.title || item.name}
+                            </p>
+                            <p className="text-sm text-gray-400">
+                              {item.media_type === 'movie' ? 'Movie' : 'TV Show'} •{' '}
+                              {new Date(item.release_date || item.first_air_date).getFullYear() || 'N/A'}
+                            </p>
+                          </div>
+                        </Link>
+                      ))
+                    ) : query.trim() ? (
+                      <div className="p-6 text-center text-gray-400">No results found</div>
+                    ) : (
+                      <div className="p-6 text-center text-gray-500">Start typing to search...</div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
 
+            {/* Bell */}
             <button
               onClick={() => navigate('/notifications')}
               className="relative p-3 rounded-full hover:bg-white/10 transition group hidden md:block"
@@ -178,7 +223,8 @@ function Navbar() {
               <Bell size={24} className="text-white group-hover:text-red-500 transition" />
             </button>
 
-            <div className="relative" ref={profileRef}>
+            {/* Profile - Hidden on mobile */}
+            <div className="relative hidden lg:block" ref={profileRef}>
               <button
                 onClick={toggleProfile}
                 className="flex items-center gap-2 hover:opacity-80 transition"
@@ -230,7 +276,11 @@ function Navbar() {
       </nav>
 
       {/* Mobile Menu */}
-      <div className={`fixed inset-y-0 left-0 z-40 w-72 bg-black/95 backdrop-blur-lg transform transition-transform duration-300 lg:hidden ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div 
+        className={`fixed inset-y-0 left-0 z-40 w-72 bg-black/95 backdrop-blur-lg transform transition-transform duration-300 lg:hidden ${
+          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
         <div className="flex flex-col h-full pt-20 px-6">
           <ul className="space-y-6 text-white text-lg font-medium">
             <li><Link to="/home" onClick={closeMobileMenu} className="block hover:text-gray-300 transition">Home</Link></li>

@@ -29,11 +29,11 @@ function Landing() {
           to="/login"
           className="px-12 py-6 bg-red-600 text-white text-2xl font-bold rounded-lg hover:bg-red-700 transition shadow-2xl"
         >
-          Sign In to Start Watching
+          Sign up to Start Watching
         </Link>
 
         <p className="mt-12 text-white/60 text-lg">
-          Ready to watch? Sign in to access your personal cinema.
+          Ready to watch? Sign up to access your personal cinema.
         </p>
       </div>
     </div>
