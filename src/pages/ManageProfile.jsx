@@ -1,4 +1,5 @@
-// src/pages/ManageProfile.jsx
+// src/pages/ManageProfile.jsx - FULLY SYNCED & COMPLETE
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -15,13 +16,14 @@ function ManageProfile() {
   const navigate = useNavigate();
   const { addNotification } = useNotification();
 
-  // === STATES ===
+  // === UI STATES ===
   const [profiles, setProfiles] = useState([]);
   const [currentProfile, setCurrentProfile] = useState(null);
   const [editingName, setEditingName] = useState(false);
   const [newName, setNewName] = useState('');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
+  // === MODAL & PIN STATES ===
   const [showPinModal, setShowPinModal] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState('');
@@ -32,13 +34,16 @@ function ManageProfile() {
   const [selectedMaturity, setSelectedMaturity] = useState('All Ages');
   const [pinPurpose, setPinPurpose] = useState(null);
 
-  const kidMaturityLevels = [
-    { rating: 'All Ages', desc: 'Suitable for everyone (0+)' },
-    { rating: '7+', desc: 'Recommended for ages 7 and up' },
-    { rating: '10+', desc: 'Recommended for ages 10 and up' },
-    { rating: '13+', desc: 'Recommended for ages 13 and up' },
-    { rating: '16+', desc: 'Recommended for ages 16 and up' }
-  ];
+  // === DATA STATES (Stats, Activity, etc.) ===
+  const [activityTimeline, setActivityTimeline] = useState([]);
+  const [stats, setStats] = useState({
+    watched: 0,
+    hours: 0,
+    favoriteGenre: 'Drama',
+    streak: 1,
+    badges: ['First Watch', 'Nollywood Fan']
+  });
+  const [badges, setBadges] = useState(stats.badges);
 
   const [devices, setDevices] = useState(() => {
     const userAgent = navigator.userAgent;
@@ -56,19 +61,16 @@ function ManageProfile() {
     }];
   });
 
-  const [activityTimeline, setActivityTimeline] = useState([]);
-  const [stats, setStats] = useState({
-    watched: 0,
-    hours: 0,
-    favoriteGenre: 'Drama',
-    streak: 1,
-    badges: ['First Watch', 'Nollywood Fan']
-  });
+  const kidMaturityLevels = [
+    { rating: 'All Ages', desc: 'Suitable for everyone (0+)' },
+    { rating: '7+', desc: 'Recommended for ages 7 and up' },
+    { rating: '10+', desc: 'Recommended for ages 10 and up' },
+    { rating: '13+', desc: 'Recommended for ages 13 and up' },
+    { rating: '16+', desc: 'Recommended for ages 16 and up' }
+  ];
 
-  const [badges, setBadges] = useState(stats.badges);
-
-  // === HELPER: SAVE TO SUPABASE (THE FIX) ===
-  // We call this manually when we update state, preventing infinite loops
+  // === 1. HELPER: SAVE TO SUPABASE ===
+  // We use this manual function instead of useEffect to prevent infinite loops
   const saveToSupabase = async (updatedProfiles, updatedActivity, updatedStats) => {
     if (!user?.id) return;
 
@@ -84,28 +86,31 @@ function ManageProfile() {
     if (error) console.error('Save error:', error);
   };
 
-  // === TRUE REAL-TIME SYNC ===
+  // === 2. TRUE REAL-TIME SYNC ===
   useEffect(() => {
-    if (!user?.id) { // FIXED: user.uid -> user.id
-      const loadLocal = () => {
-        const p = localStorage.getItem('profiles');
-        const a = localStorage.getItem('activity');
-        const s = localStorage.getItem('stats');
-        if (p) setProfiles(JSON.parse(p));
-        if (a) setActivityTimeline(JSON.parse(a));
-        if (s) setStats(JSON.parse(s));
-      };
-      loadLocal();
+    if (!user?.id) {
+      // Guest Mode: Load from local storage
+      const p = localStorage.getItem('profiles');
+      const a = localStorage.getItem('activity');
+      const s = localStorage.getItem('stats');
+      if (p) setProfiles(JSON.parse(p));
+      if (a) setActivityTimeline(JSON.parse(a));
+      if (s) setStats(JSON.parse(s));
       return;
     }
 
-    // Subscribe to changes from OTHER devices
+    // A. Subscribe to Database Changes
     const channel = supabase
       .channel(`profile-sync-${user.id}`)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users', filter: `id=eq.${user.id}` }, (payload) => {
+      .on('postgres_changes', { 
+        event: 'UPDATE', 
+        schema: 'public', 
+        table: 'users', 
+        filter: `id=eq.${user.id}` 
+      }, (payload) => {
         const data = payload.new;
         if (data) {
-          // Only update if data exists to prevent wiping local state
+          // Update local state when DB changes
           if (data.profiles) setProfiles(data.profiles);
           if (data.activity) setActivityTimeline(data.activity);
           if (data.stats) {
@@ -116,7 +121,7 @@ function ManageProfile() {
       })
       .subscribe();
 
-    // Initial Fetch
+    // B. Initial Fetch
     const fetchData = async () => {
       const { data, error } = await supabase
         .from('users')
@@ -124,18 +129,11 @@ function ManageProfile() {
         .eq('id', user.id)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        console.error('Fetch error:', error);
-        return;
-      }
-
       if (data) {
         setProfiles(data.profiles || []);
         setActivityTimeline(data.activity || []);
-        setStats(data.stats || {
-          watched: 0, hours: 0, favoriteGenre: 'Drama', streak: 1, badges: ['First Watch', 'Nollywood Fan']
-        });
-        setBadges(data.stats?.badges || ['First Watch', 'Nollywood Fan']);
+        setStats(data.stats || stats);
+        setBadges(data.stats?.badges || []);
       }
     };
 
@@ -146,7 +144,29 @@ function ManageProfile() {
     };
   }, [user]);
 
-  // === AUTO CREATE PROFILE ===
+  // === 3. CRITICAL FIX: SYNC CURRENT PROFILE ===
+  // This ensures the profile you are looking at updates instantly
+  // when the background list changes (e.g. PIN update on phone).
+  useEffect(() => {
+    if (currentProfile && profiles.length > 0) {
+      const updatedVersion = profiles.find(p => p.id === currentProfile.id);
+      
+      // If the profile data has changed, update the view
+      if (updatedVersion && JSON.stringify(updatedVersion) !== JSON.stringify(currentProfile)) {
+        setCurrentProfile(updatedVersion);
+        
+        // Update editing name state if needed
+        if (!editingName) setNewName(updatedVersion.name);
+      }
+    } else if (!currentProfile && profiles.length > 0) {
+      // Set initial active profile
+      const active = profiles.find(p => p.isActive) || profiles[0];
+      setCurrentProfile(active);
+      setNewName(active.name);
+    }
+  }, [profiles]);
+
+  // === 4. AUTO-CREATE DEFAULT PROFILE ===
   useEffect(() => {
     if (user?.id && profiles.length === 0) {
       const defaultProfile = {
@@ -155,47 +175,27 @@ function ManageProfile() {
         isActive: true,
         isKids: false,
         pin: null,
-        maturityLevel: 'TV-MA',
+        maturityLevel: 'All Ages',
         dailyLimit: null
       };
       const newProfiles = [defaultProfile];
       setProfiles(newProfiles);
-      setCurrentProfile(defaultProfile);
-      setNewName(defaultProfile.name);
-      saveToSupabase(newProfiles); // Sync immediately
+      saveToSupabase(newProfiles);
     }
   }, [user, profiles.length]);
 
-  // === SET CURRENT PROFILE ===
-  useEffect(() => {
-    if (profiles.length > 0 && !currentProfile) {
-      const active = profiles.find(p => p.isActive) || profiles[0];
-      setCurrentProfile(active);
-      setNewName(active.name || 'Profile');
-    }
-  }, [profiles]);
-
   const getAvatarLetter = (name) => name?.[0]?.toUpperCase() || '?';
 
-  // === SCROLL EFFECT ===
-  useEffect(() => {
-    const handleScroll = () => {
-      // You can add scrolled state if needed for navbar background
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // === ACTIONS ===
 
-  // === PROFILE FUNCTIONS (NOW WITH SYNC) ===
   const handleNameChange = () => {
     if (!currentProfile || !newName.trim()) return;
     const updatedProfiles = profiles.map(p => 
       p.id === currentProfile.id ? { ...p, name: newName.trim() } : p
     );
     setProfiles(updatedProfiles);
-    setCurrentProfile({ ...currentProfile, name: newName.trim() });
     setEditingName(false);
-    addNotification('Profile name updated successfully!', 'success');
+    addNotification('Profile name updated!', 'success');
     saveToSupabase(updatedProfiles); // Sync
   };
 
@@ -221,7 +221,7 @@ function ManageProfile() {
       isActive: false,
       isKids: false,
       pin: null,
-      maturityLevel: 'TV-MA',
+      maturityLevel: 'All Ages',
       dailyLimit: null
     };
     const updatedProfiles = [...profiles, newProfile];
@@ -249,6 +249,7 @@ function ManageProfile() {
   };
 
   // === KIDS MODE & PIN LOGIC ===
+
   const handleMaturityClick = () => {
     if (currentProfile.pin) {
       setPinPurpose('openMaturity');
@@ -268,6 +269,7 @@ function ManageProfile() {
     const updated = { ...currentProfile, isKids: !currentProfile.isKids };
     updated.maturityLevel = updated.isKids ? 'All Ages' : 'TV-MA';
     
+    // Optimistic Update
     setCurrentProfile(updated);
     const updatedProfiles = profiles.map(p => p.id === currentProfile.id ? updated : p);
     setProfiles(updatedProfiles);
@@ -281,11 +283,9 @@ function ManageProfile() {
       setPinInput('');
       setPinError('');
       
-      if (pinPurpose === 'toggleKids') {
-        toggleKidsMode(); // Now safe to call
-      } else if (pinPurpose === 'openMaturity') {
-        setShowMaturity(true);
-      }
+      if (pinPurpose === 'toggleKids') toggleKidsMode();
+      if (pinPurpose === 'openMaturity') setShowMaturity(true);
+      
       setPinPurpose(null);
     } else {
       setPinError('Incorrect PIN');
@@ -294,8 +294,8 @@ function ManageProfile() {
 
   const saveMaturityLevel = () => {
     const updated = { ...currentProfile, maturityLevel: selectedMaturity };
-    setCurrentProfile(updated);
     const updatedProfiles = profiles.map(p => p.id === currentProfile.id ? updated : p);
+    
     setProfiles(updatedProfiles);
     setShowMaturity(false);
     addNotification(`Content rating set to ${selectedMaturity}`, 'success');
@@ -341,6 +341,7 @@ function ManageProfile() {
     );
   }
 
+  // === RENDER ===
   return (
     <div className="min-h-screen bg-black text-white pt-32 pb-20 px-4 md:px-16">
       <div className="max-w-5xl mx-auto">
@@ -466,9 +467,10 @@ function ManageProfile() {
                 <input 
                   type="checkbox" 
                   checked={currentProfile.isKids}
-                  onChange={() => toggleKidsMode()} // Updated to call wrapper
-                  // If PIN active, the wrapper handles it, but let's prevent direct toggle visually if we wanted
+                  onChange={toggleKidsMode}
                   className="sr-only peer"
+                  // If pin is active, the wrapper handles it, but let's prevent direct toggle visually if we wanted
+                  readOnly={!!currentProfile.pin} 
                 />
                 <div className="w-14 h-8 bg-gray-700 rounded-full peer peer-checked:bg-red-600 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:after:translate-x-6"></div>
               </label>
