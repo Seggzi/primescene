@@ -22,8 +22,8 @@ export function MyListProvider({ children }) {
     const fetchMyList = async () => {
       // We select from 'my_list' because that is the table in your SQL screenshot
       const { data, error } = await supabase
-        .from('my_list') 
-        .select('*') 
+        .from('my_list')
+        .select('*')
         .eq('user_id', user.id);
 
       if (error) {
@@ -37,6 +37,26 @@ export function MyListProvider({ children }) {
     };
 
     fetchMyList();
+
+    const pushToCloud = async (newData) => {
+      if (!user?.id) return;
+
+      // 1. Log to console so you can see if it's actually firing
+      console.log("Saving to Database...", newData);
+
+      const { data, error } = await supabase
+        .from('users')
+        .update(newData)
+        .eq('id', user.id)
+        .select(); // Adding .select() forces it to return the saved data
+
+      if (error) {
+        console.error("Database Save Error:", error.message);
+        addNotification("Failed to save to cloud", "error");
+      } else {
+        console.log("Saved Successfully:", data);
+      }
+    };
 
     // --- REALTIME LISTENER ---
     const channel = supabase
@@ -61,8 +81,8 @@ export function MyListProvider({ children }) {
 
           // If a movie is REMOVED
           if (payload.eventType === 'DELETE') {
-             // For deletes, it's safest to just re-fetch the clean list to avoid sync bugs
-             fetchMyList();
+            // For deletes, it's safest to just re-fetch the clean list to avoid sync bugs
+            fetchMyList();
           }
         }
       )
@@ -87,7 +107,7 @@ export function MyListProvider({ children }) {
       const { error } = await supabase.from('my_list').insert({
         user_id: user.id,
         movie_id: movie.id,
-        movie_data: movie 
+        movie_data: movie
       });
       if (error) console.error('Add error:', error);
     }
@@ -107,7 +127,7 @@ export function MyListProvider({ children }) {
         .delete()
         .eq('user_id', user.id)
         .eq('movie_id', movieId);
-        
+
       if (error) console.error('Remove error:', error);
     }
   };

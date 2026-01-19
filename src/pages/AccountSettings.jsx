@@ -2,16 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Check, CreditCard, Bell, Shield, Globe, Mail, Lock, 
-  Smartphone, Download, Users, Crown, ChevronRight, Eye, EyeOff 
+import {
+  Check, CreditCard, Bell, Shield, Globe, Mail, Lock,
+  Smartphone, Download, Users, Crown, ChevronRight, Eye, EyeOff
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../supabase';
 
 function AccountSettings() {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth(); 
+  const { user, signOut } = useAuth();
 
   // === MODAL STATES ===
   const [showEmailModal, setShowEmailModal] = useState(false);
@@ -73,11 +73,11 @@ function AccountSettings() {
       .channel(`settings-sync-${user.id}`)
       .on(
         'postgres_changes',
-        { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'users', 
-          filter: `id=eq.${user.id}` 
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'users',
+          filter: `id=eq.${user.id}`
         },
         (payload) => {
           const newSettings = payload.new.settings;
@@ -110,9 +110,9 @@ function AccountSettings() {
       // Save to Supabase 'users' table in the 'settings' column
       const { error } = await supabase
         .from('users')
-        .upsert({ 
-          id: user.id, 
-          settings: newSettings 
+        .upsert({
+          id: user.id,
+          settings: newSettings
         }, { onConflict: 'id' });
 
       if (error) console.error('Error saving settings:', error);
@@ -150,6 +150,28 @@ function AccountSettings() {
       setEmailLoading(false);
     }
   };
+
+
+  const pushToCloud = async (newData) => {
+    if (!user?.id) return;
+
+    // 1. Log to console so you can see if it's actually firing
+    console.log("Saving to Database...", newData);
+
+    const { data, error } = await supabase
+      .from('users')
+      .update(newData)
+      .eq('id', user.id)
+      .select(); // Adding .select() forces it to return the saved data
+
+    if (error) {
+      console.error("Database Save Error:", error.message);
+      addNotification("Failed to save to cloud", "error");
+    } else {
+      console.log("Saved Successfully:", data);
+    }
+  };
+
 
   // === VERIFY OTP & UPDATE EMAIL ===
   const handleVerifyAndUpdateEmail = async () => {
@@ -240,7 +262,7 @@ function AccountSettings() {
         setPasswordOtpSent(false);
         setPasswordSuccess(false);
         setPasswordError('');
-        
+
         // Logout for security
         await signOut();
         navigate('/login');
@@ -277,7 +299,7 @@ function AccountSettings() {
           <p className="text-gray-300 mb-6">
             Unlock 5 profiles, offline downloads, 4K, and exclusives
           </p>
-          <button 
+          <button
             onClick={() => alert('Premium coming soon!')}
             className="px-12 py-4 bg-red-600 rounded-full font-bold hover:bg-red-700 transition shadow-lg"
           >
@@ -287,7 +309,7 @@ function AccountSettings() {
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <button 
+          <button
             onClick={() => setShowEmailModal(true)}
             className="bg-zinc-900/60 rounded-2xl p-6 border border-white/10 hover:border-red-600/50 transition-all group"
           >
@@ -295,7 +317,7 @@ function AccountSettings() {
             <p className="font-semibold">Change Email</p>
           </button>
 
-          <button 
+          <button
             onClick={() => setShowPasswordModal(true)}
             className="bg-zinc-900/60 rounded-2xl p-6 border border-white/10 hover:border-red-600/50 transition-all group"
           >
@@ -303,7 +325,7 @@ function AccountSettings() {
             <p className="font-semibold">Change Password</p>
           </button>
 
-          <button 
+          <button
             onClick={() => setShowNotificationsModal(true)}
             className="bg-zinc-900/60 rounded-2xl p-6 border border-white/10 hover:border-red-600/50 transition-all group"
           >
@@ -497,7 +519,7 @@ function AccountSettings() {
             <div className="bg-zinc-900 rounded-3xl p-8 max-w-md w-full border border-white/20 shadow-2xl">
               <h2 className="text-2xl font-bold mb-6 text-center">Notifications</h2>
               <div className="space-y-6">
-                
+
                 {/* Email Toggle */}
                 <div className="flex items-center justify-between">
                   <div>
@@ -505,11 +527,11 @@ function AccountSettings() {
                     <p className="text-sm text-gray-400">New releases & recommendations</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={emailNotifs} 
-                      onChange={() => setEmailNotifs(!emailNotifs)} 
-                      className="sr-only peer" 
+                    <input
+                      type="checkbox"
+                      checked={emailNotifs}
+                      onChange={() => setEmailNotifs(!emailNotifs)}
+                      className="sr-only peer"
                     />
                     <div className="w-12 h-6 bg-gray-700 rounded-full peer peer-checked:bg-red-600 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
                   </label>
@@ -522,11 +544,11 @@ function AccountSettings() {
                     <p className="text-sm text-gray-400">App alerts on your device</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={pushNotifs} 
-                      onChange={() => setPushNotifs(!pushNotifs)} 
-                      className="sr-only peer" 
+                    <input
+                      type="checkbox"
+                      checked={pushNotifs}
+                      onChange={() => setPushNotifs(!pushNotifs)}
+                      className="sr-only peer"
                     />
                     <div className="w-12 h-6 bg-gray-700 rounded-full peer peer-checked:bg-red-600 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
                   </label>
@@ -539,11 +561,11 @@ function AccountSettings() {
                     <p className="text-sm text-gray-400">Important account updates</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={smsNotifs} 
-                      onChange={() => setSmsNotifs(!smsNotifs)} 
-                      className="sr-only peer" 
+                    <input
+                      type="checkbox"
+                      checked={smsNotifs}
+                      onChange={() => setSmsNotifs(!smsNotifs)}
+                      className="sr-only peer"
                     />
                     <div className="w-12 h-6 bg-gray-700 rounded-full peer peer-checked:bg-red-600 after:content-[''] after:absolute after:top-1 after:left-1 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-6"></div>
                   </label>
@@ -555,7 +577,7 @@ function AccountSettings() {
                   <Check size={20} /> Saved to Cloud!
                 </p>
               )}
-              
+
               <div className="flex gap-4 mt-10">
                 <button
                   onClick={() => setShowNotificationsModal(false)}
