@@ -1,5 +1,7 @@
 6nzSKAkXQcfji96k
 
 
-
+git add .
+git commit -m "Test auto-deploy"
+git push origin main
 
