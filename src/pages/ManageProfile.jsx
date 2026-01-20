@@ -120,7 +120,6 @@ function ManageProfile() {
     const ua = navigator.userAgent;
     const platform = navigator.platform;
     
-    // Detailed iPhone Detection via Resolution Mapping
     if (/iPhone/.test(ua)) {
       const w = window.screen.width;
       const h = window.screen.height;
@@ -134,29 +133,20 @@ function ManageProfile() {
       return "Apple iPhone";
     }
 
-    // Android Model Extraction from User Agent
     if (/Android/.test(ua)) {
       const modelMatch = ua.match(/;\s([^;]+)\sBuild/);
-      if (modelMatch && modelMatch[1]) {
-        return modelMatch[1]; 
-      }
+      if (modelMatch && modelMatch[1]) return modelMatch[1];
       return "Android Device";
     }
 
-    // PC / Desktop Detection
     if (/Win/.test(platform)) {
       if (ua.includes("Windows NT 10.0")) return "Windows 10/11 PC";
       if (ua.includes("Windows NT 6.3")) return "Windows 8.1 PC";
       return "Windows PC";
     }
     
-    if (/Mac/.test(platform)) {
-      return "Apple MacBook/iMac";
-    }
-
-    if (/Linux/.test(platform)) {
-      return "Linux Workstation";
-    }
+    if (/Mac/.test(platform)) return "Apple MacBook/iMac";
+    if (/Linux/.test(platform)) return "Linux Workstation";
 
     return "Web Browser Session";
   };
@@ -194,7 +184,6 @@ function ManageProfile() {
         setStats(data.stats || stats);
         setAppSettings(data.app_settings || appSettings);
         
-        // Handle Device Registration
         const currentDeviceName = getDetailedDeviceName();
         const existingDevices = data.devices || [];
         
@@ -211,7 +200,6 @@ function ManageProfile() {
             isCurrent: true
           };
           
-          // Set all other devices to not current
           const updatedDevicesList = [
             newDevice, 
             ...existingDevices.map(d => ({ ...d, isCurrent: false }))
@@ -227,7 +215,6 @@ function ManageProfile() {
 
     fetchAllUserData();
 
-    // Real-time Supabase Subscription
     const channel = supabase
       .channel(`profile-updates-${user.id}`)
       .on('postgres_changes', { 
@@ -246,7 +233,6 @@ function ManageProfile() {
     return () => supabase.removeChannel(channel);
   }, [user]);
 
-  // Sync current profile local state
   useEffect(() => {
     if (profiles.length > 0) {
       const active = profiles.find(p => p.isActive) || profiles[0];
@@ -326,7 +312,6 @@ function ManageProfile() {
     addNotification("Settings updated", "success");
   };
 
-  // PIN Logic
   const handlePinUnlock = () => {
     if (pinInput === currentProfile.pin) {
       setShowPinModal(false);
@@ -395,212 +380,270 @@ function ManageProfile() {
 
   if (!currentProfile) return <div className="min-h-screen bg-black flex items-center justify-center text-red-600 font-bold">LOADING DATA...</div>;
 
-  // ==========================================
-  // 6. UI RENDERING
-  // ==========================================
   return (
-    <div className="min-h-screen bg-black text-white pt-24 md:pt-32 pb-20 px-4 md:px-12 lg:px-24">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-black text-white pt-24 md:pt-32 pb-40 px-4 md:px-12 lg:px-24">
+      <div className="max-w-7xl mx-auto">
         
         {/* Header */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
           <div>
-            <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-2 uppercase">Manage Profile</h1>
-            <p className="text-zinc-500 font-medium text-sm md:text-base tracking-wide">Customize your viewing experience and active devices.</p>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-2 uppercase">Manage Profile</h1>
+            <p className="text-zinc-400 font-medium text-base md:text-lg tracking-wide">Customize your viewing experience and manage devices</p>
           </div>
-          <div className="flex items-center gap-4 bg-zinc-900/50 p-2 rounded-2xl border border-white/5 self-start md:self-auto">
+          <div className="flex items-center gap-4 bg-zinc-900/70 p-3 rounded-2xl border border-zinc-800 self-start md:self-auto">
             <button 
               onClick={() => navigate('/account-settings')} 
-              className="p-3 hover:bg-white/10 rounded-xl transition-all group"
+              className="p-3 hover:bg-zinc-800 rounded-xl transition-all group"
             >
               <Settings size={22} className="text-zinc-400 group-hover:text-red-500 group-hover:rotate-45 transition-all" />
             </button>
-            <button className="p-3 hover:bg-white/10 rounded-xl transition-all">
-              <HelpCircle size={22} className="text-zinc-400" />
+            <button className="p-3 hover:bg-zinc-800 rounded-xl transition-all">
+              <HelpCircle size={22} className="text-zinc-400 hover:text-zinc-300 transition-colors" />
             </button>
           </div>
         </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
           
-          {/* Left Column: Profiles & Insights */}
+          {/* Left Column: Profiles, Stats & Recent Activity */}
           <div className="lg:col-span-4 space-y-8">
             
             {/* Profile Grid */}
-            <section className="bg-zinc-900/40 border border-white/5 rounded-[2.5rem] p-8 shadow-2xl">
-              <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-8">Profiles</h3>
-              <div className="grid grid-cols-2 gap-4">
+            <section className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-8 shadow-xl">
+              <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-8">Profiles</h3>
+              <div className="grid grid-cols-2 gap-5">
                 {profiles.map(p => (
                   <div 
                     key={p.id} 
                     onClick={() => switchProfile(p)}
-                    className={`relative p-4 rounded-3xl border transition-all cursor-pointer group ${p.isActive ? 'bg-red-600 border-red-500 shadow-xl shadow-red-900/20' : 'bg-black/40 border-white/5 hover:border-white/20'}`}
+                    className={`relative p-6 rounded-2xl border transition-all cursor-pointer group ${p.isActive ? 'bg-red-600/20 border-red-600 shadow-lg shadow-red-900/30' : 'bg-zinc-950/60 border-zinc-800 hover:border-zinc-600'}`}
                   >
-                    <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center text-xl font-bold mb-3">
+                    <div className="w-14 h-14 rounded-xl bg-zinc-800 flex items-center justify-center text-2xl font-black mb-4">
                       {p.name[0]}
                     </div>
-                    <p className={`font-bold truncate text-sm ${p.isActive ? 'text-white' : 'text-zinc-400'}`}>{p.name}</p>
-                    {p.isKids && <Shield size={12} className="mt-1 text-white/60" />}
+                    <p className={`font-bold truncate text-base ${p.isActive ? 'text-white' : 'text-zinc-300'}`}>{p.name}</p>
+                    {p.isKids && <Shield size={14} className="mt-2 text-emerald-400" />}
                     {profiles.length > 1 && (
                       <button 
                         onClick={(e) => { e.stopPropagation(); setDeleteConfirm(p.id); }}
-                        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 p-2 bg-black/50 rounded-lg hover:bg-red-500 transition-all"
+                        className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 p-2 bg-black/60 rounded-lg hover:bg-red-600/80 transition-all"
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={14} />
                       </button>
                     )}
                   </div>
                 ))}
                 <button 
                   onClick={addProfile}
-                  className="p-4 rounded-3xl border border-dashed border-white/20 hover:border-red-500 flex flex-col items-center justify-center gap-2 group transition-all"
+                  className="p-6 rounded-2xl border border-dashed border-zinc-700 hover:border-red-600 flex flex-col items-center justify-center gap-3 group transition-all"
                 >
-                  <Plus size={24} className="text-zinc-500 group-hover:text-red-500" />
-                  <span className="text-[10px] font-bold text-zinc-500 uppercase">Add</span>
+                  <Plus size={28} className="text-zinc-500 group-hover:text-red-500 transition-colors" />
+                  <span className="text-sm font-bold text-zinc-500 group-hover:text-zinc-300 uppercase tracking-wide">Add Profile</span>
                 </button>
               </div>
             </section>
 
             {/* User Stats Card */}
-            <section className="bg-zinc-900/40 border border-white/5 rounded-[2.5rem] p-8">
-              <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] mb-8">Personal Insights</h3>
-              <div className="space-y-6 mb-8">
+            <section className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-8 shadow-xl">
+              <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider mb-8">Your Stats</h3>
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-red-600/10 flex items-center justify-center text-red-500"><Film size={18} /></div>
-                    <span className="text-zinc-400 font-medium text-sm">Titles</span>
+                    <div className="w-12 h-12 rounded-xl bg-red-900/30 flex items-center justify-center text-red-500">
+                      <Film size={20} />
+                    </div>
+                    <span className="text-zinc-300 font-medium">Titles Watched</span>
                   </div>
-                  <span className="text-xl font-black">{stats.watched}</span>
+                  <span className="text-2xl font-black">{stats.watched}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-yellow-600/10 flex items-center justify-center text-yellow-500"><Zap size={18} /></div>
-                    <span className="text-zinc-400 font-medium text-sm">Streak</span>
+                    <div className="w-12 h-12 rounded-xl bg-yellow-900/30 flex items-center justify-center text-yellow-500">
+                      <Zap size={20} />
+                    </div>
+                    <span className="text-zinc-300 font-medium">Streak</span>
                   </div>
-                  <span className="text-xl font-black text-yellow-500">{stats.streak}d</span>
+                  <span className="text-2xl font-black text-yellow-400">{stats.streak}d</span>
                 </div>
               </div>
 
-              {/* Badges */}
-              <div className="pt-6 border-t border-white/5">
-                <h4 className="text-[10px] font-bold text-zinc-600 uppercase mb-4 tracking-widest">Achievements</h4>
-                <div className="flex flex-wrap gap-2">
+              <div className="pt-8 border-t border-zinc-800 mt-6">
+                <h4 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-5">Achievements</h4>
+                <div className="flex flex-wrap gap-3">
                   {unlockedBadges.length > 0 ? unlockedBadges.map(badge => (
-                    <div key={badge.id} className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 hover:bg-red-600/10 transition-all cursor-help" title={badge.req}>
-                      <span className={`${badge.color}`}>{badge.icon}</span>
-                      <span className="text-[10px] font-black uppercase text-zinc-300">{badge.name}</span>
+                    <div key={badge.id} className="flex items-center gap-2 px-4 py-2 bg-zinc-800/60 rounded-full border border-zinc-700 hover:border-zinc-500 transition-all">
+                      <span className={badge.color}>{badge.icon}</span>
+                      <span className="text-sm font-bold text-zinc-200">{badge.name}</span>
                     </div>
                   )) : (
-                    <p className="text-[10px] text-zinc-600 italic font-medium">Watch more to unlock badges.</p>
+                    <p className="text-sm text-zinc-500 italic">Watch more to unlock badges</p>
                   )}
                 </div>
               </div>
             </section>
+
+            {/* Recent Activity */}
+            <section className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-8 shadow-xl">
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl md:text-2xl font-bold flex items-center gap-3">
+                  <Calendar size={24} className="text-red-500" /> Recent Activity
+                </h3>
+                <button 
+                  onClick={clearAllActivity}
+                  className="text-sm font-medium text-zinc-400 hover:text-white transition-colors"
+                >
+                  Clear All
+                </button>
+              </div>
+              <div className="space-y-6">
+                {activityTimeline.length > 0 ? activityTimeline.slice(0, 5).map((item, i) => (
+                  <div key={i} className="flex items-center justify-between py-4 border-b border-zinc-800 last:border-0">
+                    <div className="flex items-center gap-4">
+                      <div className="w-2 h-2 rounded-full bg-red-600 shadow-[0_0_8px_rgba(239,68,68,0.6)]" />
+                      <p className="font-medium text-base">{item.title || 'Watched content'}</p>
+                    </div>
+                    <span className="text-sm text-zinc-500">{item.date || 'Recent'}</span>
+                  </div>
+                )) : (
+                  <div className="text-center py-16 opacity-60">
+                    <Activity size={40} className="mx-auto mb-4 text-zinc-600" />
+                    <p className="text-base font-medium">No recent activity yet</p>
+                  </div>
+                )}
+              </div>
+            </section>
           </div>
 
-          {/* Right Column: Settings & Devices */}
-          <div className="lg:col-span-8 space-y-8">
+          {/* Right Column: Profile Details & Devices */}
+          <div className="lg:col-span-8 space-y-10">
             
             {/* Profile Detail Card */}
-            <div className="bg-zinc-900/40 border border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
-              <div className="p-8 md:p-10 border-b border-white/5">
+            <div className="bg-zinc-900/60 border border-zinc-800 rounded-3xl overflow-hidden shadow-xl">
+              <div className="p-10 border-b border-zinc-800">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-8">
                   <div className="flex items-center gap-6">
-                    <div className="w-20 h-20 md:w-24 md:h-24 rounded-3xl bg-red-600 flex items-center justify-center text-3xl md:text-4xl font-black shadow-2xl shadow-red-600/20">
+                    <div className="w-24 h-24 rounded-2xl bg-red-600 flex items-center justify-center text-4xl font-black shadow-lg shadow-red-900/40">
                       {currentProfile.name[0]}
                     </div>
                     <div>
                       {editingName ? (
-                        <div className="flex gap-2">
+                        <div className="flex gap-3">
                           <input 
                             type="text" 
                             value={newName} 
                             onChange={e => setNewName(e.target.value)}
-                            className="bg-black border border-red-600/50 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 ring-red-600/20"
+                            className="bg-zinc-950 border border-red-600/50 rounded-xl px-5 py-3 text-lg focus:outline-none focus:ring-2 ring-red-600/30 w-64"
                           />
-                          <button onClick={handleNameChange} className="p-2 bg-red-600 rounded-xl hover:bg-red-700"><Save size={20} /></button>
+                          <button onClick={handleNameChange} className="p-3 bg-red-600 rounded-xl hover:bg-red-700 transition-all">
+                            <Save size={22} />
+                          </button>
                         </div>
                       ) : (
-                        <div className="flex items-center gap-3">
-                          <h2 className="text-2xl md:text-3xl font-black tracking-tight">{currentProfile.name}</h2>
-                          <button onClick={() => setEditingName(true)} className="text-zinc-500 hover:text-white"><Edit size={18} /></button>
+                        <div className="flex items-center gap-4">
+                          <h2 className="text-3xl md:text-4xl font-black tracking-tight">{currentProfile.name}</h2>
+                          <button onClick={() => setEditingName(true)} className="text-zinc-400 hover:text-white transition-colors">
+                            <Edit size={22} />
+                          </button>
                         </div>
                       )}
-                      <p className="text-zinc-500 font-bold text-[10px] mt-1 uppercase tracking-[0.2em]">{currentProfile.isKids ? 'Kids Restricted' : 'Full Access Profile'}</p>
+                      <p className="text-zinc-500 font-medium text-sm mt-2 uppercase tracking-wide">
+                        {currentProfile.isKids ? 'Kids Profile • Restricted' : 'Standard Profile'}
+                      </p>
                     </div>
                   </div>
                   <button 
                     onClick={() => setSettingPin(true)}
-                    className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-2xl font-bold text-sm transition-all flex items-center justify-center gap-2"
+                    className="px-8 py-4 bg-zinc-800 hover:bg-zinc-700 rounded-2xl font-semibold text-base transition-all flex items-center gap-3 border border-zinc-700"
                   >
-                    <Lock size={16} /> {currentProfile.pin ? 'Manage PIN' : 'Secure Profile'}
+                    <Lock size={18} /> {currentProfile.pin ? 'Manage PIN' : 'Add PIN Lock'}
                   </button>
                 </div>
               </div>
 
-              <div className="p-8 md:p-10 space-y-10">
+              <div className="p-10 space-y-12">
                 {/* Kids Toggle */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between py-4">
                   <div className="space-y-1">
-                    <h4 className="text-lg font-bold flex items-center gap-2">
-                      Kids Experience
-                      {currentProfile.isKids && <span className="text-[10px] bg-red-600/20 text-red-500 px-2 py-0.5 rounded-full font-black uppercase">On</span>}
+                    <h4 className="text-xl font-semibold flex items-center gap-3">
+                      Kids Profile
+                      {currentProfile.isKids && (
+                        <span className="text-xs bg-emerald-900/40 text-emerald-400 px-3 py-1 rounded-full font-medium">
+                          Active
+                        </span>
+                      )}
                     </h4>
-                    <p className="text-zinc-500 text-sm max-w-md">Limits content to ratings below 13+ and simplifies interface.</p>
+                    <p className="text-zinc-400 text-base">Family-friendly content and simplified interface</p>
                   </div>
                   <button 
                     onClick={() => {
                       if (currentProfile.pin) { setPinPurpose('toggleKids'); setShowPinModal(true); }
                       else { finalizeKidsToggle(); }
                     }}
-                    className={`w-16 h-8 rounded-full relative transition-all ${currentProfile.isKids ? 'bg-red-600' : 'bg-zinc-800'}`}
+                    className={`w-16 h-8 rounded-full relative transition-all ${currentProfile.isKids ? 'bg-emerald-600' : 'bg-zinc-700'}`}
                   >
-                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${currentProfile.isKids ? 'right-1' : 'left-1'}`} />
+                    <div className={`absolute top-1 w-6 h-6 bg-white rounded-full shadow-md transition-all ${currentProfile.isKids ? 'right-1' : 'left-1'}`} />
                   </button>
                 </div>
 
                 {/* Maturity Rating */}
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between py-4">
                   <div className="space-y-1">
-                    <h4 className="text-lg font-bold">Maturity Content Control</h4>
-                    <p className="text-zinc-500 text-sm">Titles rated <span className="text-white font-bold">{currentProfile.maturityLevel}</span> and below are visible.</p>
+                    <h4 className="text-xl font-semibold">Content Maturity</h4>
+                    <p className="text-zinc-400 text-base">
+                      Maximum allowed rating: <span className="text-white font-medium">{currentProfile.maturityLevel}</span>
+                    </p>
                   </div>
                   <button 
                     onClick={() => {
                       if (currentProfile.pin) { setPinPurpose('openMaturity'); setShowPinModal(true); }
                       else { setShowMaturity(true); }
                     }}
-                    className="text-red-500 font-bold text-sm hover:underline flex items-center gap-1"
+                    className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-xl font-medium text-base transition-all border border-zinc-700"
                   >
-                    Modify <ChevronRight size={16} />
+                    Change
                   </button>
                 </div>
 
                 {/* Technical Preferences */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8 border-t border-white/5">
-                  <div className="space-y-4">
-                    <h4 className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest flex items-center gap-2"><Monitor size={14} /> Playback Options</h4>
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-zinc-400">Autoplay Next Episode</span>
-                        <input type="checkbox" checked={appSettings.autoplayNext} onChange={e => updateAppSettings('autoplayNext', e.target.checked)} className="accent-red-600 w-4 h-4" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10 pt-8 border-t border-zinc-800">
+                  <div className="space-y-6">
+                    <h4 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+                      <Monitor size={18} /> Playback Settings
+                    </h4>
+                    <div className="space-y-5">
+                      <div className="flex items-center justify-between text-base">
+                        <span className="text-zinc-300">Autoplay Next Episode</span>
+                        <input 
+                          type="checkbox" 
+                          checked={appSettings.autoplayNext} 
+                          onChange={e => updateAppSettings('autoplayNext', e.target.checked)} 
+                          className="w-5 h-5 accent-red-600 rounded" 
+                        />
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-zinc-400">Autoplay Previews</span>
-                        <input type="checkbox" checked={appSettings.autoplayPreviews} onChange={e => updateAppSettings('autoplayPreviews', e.target.checked)} className="accent-red-600 w-4 h-4" />
+                      <div className="flex items-center justify-between text-base">
+                        <span className="text-zinc-300">Play Previews Automatically</span>
+                        <input 
+                          type="checkbox" 
+                          checked={appSettings.autoplayPreviews} 
+                          onChange={e => updateAppSettings('autoplayPreviews', e.target.checked)} 
+                          className="w-5 h-5 accent-red-600 rounded" 
+                        />
                       </div>
                     </div>
                   </div>
-                  <div className="space-y-4">
-                    <h4 className="text-[10px] font-bold text-zinc-600 uppercase tracking-widest flex items-center gap-2"><Globe size={14} /> Localization</h4>
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-zinc-400">Audio/Subtitle Language</span>
-                        <span className="text-red-500 font-bold text-xs">{appSettings.language}</span>
+
+                  <div className="space-y-6">
+                    <h4 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
+                      <Globe size={18} /> Language & Quality
+                    </h4>
+                    <div className="space-y-5">
+                      <div className="flex items-center justify-between text-base">
+                        <span className="text-zinc-300">Preferred Language</span>
+                        <span className="text-red-400 font-medium">{appSettings.language}</span>
                       </div>
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-zinc-400">Stream Quality</span>
-                        <span className="text-red-500 font-bold text-xs">{appSettings.quality}</span>
+                      <div className="flex items-center justify-between text-base">
+                        <span className="text-zinc-300">Streaming Quality</span>
+                        <span className="text-red-400 font-medium">{appSettings.quality}</span>
                       </div>
                     </div>
                   </div>
@@ -608,90 +651,122 @@ function ManageProfile() {
               </div>
             </div>
 
-            {/* DEVICE MANAGEMENT - THE NEW SECTION */}
-            <section className="bg-zinc-900/40 border border-white/5 rounded-[2.5rem] p-8 md:p-10 shadow-2xl">
+            {/* Authorized Devices */}
+            <section className="bg-zinc-900/60 border border-zinc-800 rounded-3xl p-10 shadow-xl">
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-lg font-bold flex items-center gap-3">
-                  <Smartphone size={20} className="text-red-500" /> Authorized Devices
+                <h3 className="text-2xl font-bold flex items-center gap-3">
+                  <Smartphone size={24} className="text-red-500" /> Authorized Devices
                 </h3>
-                <span className="text-[10px] font-black bg-white/10 px-3 py-1 rounded-full uppercase tracking-widest">
-                  {devices.length} Devices Online
+                <span className="text-sm font-medium bg-zinc-800 px-4 py-2 rounded-full">
+                  {devices.length} active
                 </span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {devices.map((dev) => (
                   <div 
                     key={dev.id} 
-                    className="p-5 bg-black/40 border border-white/5 rounded-3xl flex items-center justify-between group hover:border-white/10 transition-all"
+                    className="p-6 bg-zinc-950/60 border border-zinc-800 rounded-2xl flex items-center justify-between group hover:border-zinc-600 transition-all"
                   >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-zinc-900 rounded-2xl flex items-center justify-center">
-                        {dev.type === 'Desktop' ? <Laptop size={20} className="text-zinc-500" /> : <Smartphone size={20} className="text-zinc-500" />}
+                    <div className="flex items-center gap-5">
+                      <div className="w-14 h-14 bg-zinc-900 rounded-xl flex items-center justify-center">
+                        {dev.type === 'Desktop' ? <Laptop size={24} className="text-zinc-400" /> : <Smartphone size={24} className="text-zinc-400" />}
                       </div>
                       <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-bold text-sm tracking-tight">{dev.name}</p>
-                          {dev.isCurrent && (
-                            <span className="text-[8px] bg-red-600 px-1.5 py-0.5 rounded text-white font-black uppercase tracking-tighter shadow-lg shadow-red-600/30">
-                              Current
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[10px] text-zinc-600 font-bold">Sync: {dev.lastActive}</p>
+                        <p className="font-semibold text-lg">{dev.name}</p>
+                        {dev.isCurrent && (
+                          <span className="text-xs bg-emerald-900/40 text-emerald-400 px-3 py-1 rounded-full mt-1 inline-block">
+                            Current Device
+                          </span>
+                        )}
+                        <p className="text-sm text-zinc-500 mt-1">Last active: {dev.lastActive}</p>
                       </div>
                     </div>
                     {!dev.isCurrent && (
                       <button 
                         onClick={() => removeDevice(dev.id)}
-                        className="p-2 text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
-                        title="Sign out this device"
+                        className="p-3 text-zinc-500 hover:text-red-400 hover:bg-red-950/30 rounded-xl transition-all"
+                        title="Sign out device"
                       >
-                        <LogOut size={16} />
+                        <LogOut size={20} />
                       </button>
                     )}
                   </div>
                 ))}
               </div>
             </section>
-
-            {/* Viewing Timeline history */}
-            <section className="bg-zinc-900/40 border border-white/5 rounded-[2.5rem] p-8 md:p-10">
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-lg font-bold flex items-center gap-3">
-                  <Calendar size={20} className="text-red-500" /> Viewing Activity
-                </h3>
-                <button 
-                  onClick={clearAllActivity}
-                  className="text-[10px] font-black text-zinc-500 hover:text-white uppercase tracking-[0.2em]"
-                >
-                  Clear All
-                </button>
-              </div>
-              <div className="space-y-6">
-                {activityTimeline.length > 0 ? activityTimeline.slice(0, 5).map((item, i) => (
-                  <div key={i} className="flex items-center justify-between group">
-                    <div className="flex items-center gap-4">
-                      <div className="w-1.5 h-1.5 rounded-full bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.8)]" />
-                      <p className="font-bold text-sm group-hover:text-red-500 transition-colors">{item.title}</p>
-                    </div>
-                    <span className="text-[10px] text-zinc-600 font-black uppercase">{item.date || 'Today'}</span>
-                  </div>
-                )) : (
-                  <div className="text-center py-10 opacity-30">
-                    <Activity size={32} className="mx-auto mb-2" />
-                    <p className="text-xs font-bold uppercase tracking-widest">No Recent History</p>
-                  </div>
-                )}
-              </div>
-            </section>
           </div>
         </div>
 
-        {/* ==========================================
-            7. FULL MODAL OVERLAYS
-        ========================================== */}
+        {/* Premium Upgrade CTA */}
+        <div className="mt-20 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black border border-zinc-800/70 rounded-3xl p-12 md:p-16 shadow-2xl shadow-black/70 overflow-hidden relative mx-auto max-w-5xl">
+          <div className="absolute inset-0 bg-gradient-to-r from-red-950/15 via-transparent to-purple-950/10 pointer-events-none" />
+          
+          <div className="relative z-10 text-center">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-white mb-6">
+              Unlock <span className="text-red-500">Premium</span> Experience
+            </h2>
+            
+            <p className="text-xl md:text-2xl text-zinc-300 font-medium mb-4">
+              Take your streaming to the next level
+            </p>
+            
+            <p className="text-lg text-zinc-400 mb-12 leading-relaxed max-w-3xl mx-auto">
+              Enjoy multiple profiles, offline downloads, 4K Ultra HD streaming, no ads, and exclusive early access to new releases.
+            </p>
 
-        {/* Security PIN Entry */}
+            <button
+              onClick={() => navigate('/account-settings')}
+              className="inline-flex items-center px-12 py-6 bg-gradient-to-r from-red-600 to-red-700 
+                         hover:from-red-700 hover:to-red-800 
+                         text-white font-bold text-xl rounded-full 
+                         shadow-xl shadow-red-900/40 
+                         transition-all duration-300 transform hover:scale-105 active:scale-95"
+            >
+              Upgrade Now
+            </button>
+          </div>
+        </div>
+
+        {/* Footer with external links for Privacy & Terms */}
+        <footer className="mt-24 pt-12 pb-16 border-t border-zinc-800 text-center text-zinc-500 text-sm">
+          <div className="max-w-4xl mx-auto">
+            <p className="mb-4">
+              © {new Date().getFullYear()} Qodec Tech. All rights reserved.
+            </p>
+            <div className="flex justify-center gap-8 md:gap-12 flex-wrap">
+              <a 
+                href="https://policies.google.com/privacy" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-zinc-300 transition-colors"
+              >
+                Privacy Policy
+              </a>
+              <a 
+                href="https://policies.google.com/terms" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:text-zinc-300 transition-colors"
+              >
+                Terms of Service
+              </a>
+              <a 
+                href="/help-center" 
+                className="hover:text-zinc-300 transition-colors"
+              >
+                Help Center
+              </a>
+              <a 
+                href="/help-center" 
+                className="hover:text-zinc-300 transition-colors"
+              >
+                Contact Us
+              </a>
+            </div>
+          </div>
+        </footer>
+
+        {/* Modals - unchanged */}
         {showPinModal && (
           <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-6 backdrop-blur-sm">
             <div className="bg-zinc-900 w-full max-w-sm rounded-[3rem] p-10 border border-white/10 text-center shadow-2xl">
@@ -728,7 +803,6 @@ function ManageProfile() {
           </div>
         )}
 
-        {/* Security PIN Setup */}
         {settingPin && (
           <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-6 backdrop-blur-sm">
             <div className="bg-zinc-900 w-full max-w-md rounded-[3rem] p-10 border border-white/10 shadow-2xl">
@@ -767,7 +841,6 @@ function ManageProfile() {
           </div>
         )}
 
-        {/* Maturity Rating Picker */}
         {showMaturity && (
           <div className="fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 md:p-10">
             <div className="bg-zinc-900 w-full max-w-3xl rounded-[3rem] border border-white/10 flex flex-col max-h-[90vh] shadow-2xl">
@@ -808,7 +881,6 @@ function ManageProfile() {
           </div>
         )}
 
-        {/* Delete Verification */}
         {deleteConfirm && (
           <div className="fixed inset-0 bg-black/90 z-[100] flex items-center justify-center p-6 backdrop-blur-md">
             <div className="bg-zinc-900 max-w-md w-full rounded-[3rem] p-10 border border-red-900/30 text-center shadow-2xl">
