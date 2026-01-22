@@ -1,5 +1,12 @@
 {
-  "appId": "com.qodectech.primescene",
-  "appName": "primescene",
-  "webDir": "dist"
+  "appId": "ng.primescene.app",
+  "appName": "PrimeScene",
+  "webDir": "dist",
+  "plugins": {
+    "GoogleAuth": {
+      "scopes": ["profile", "email"],
+      "serverClientId": "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com",
+      "forceCodeForRefreshToken": true
+    }
+  }
 }

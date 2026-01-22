@@ -17,9 +17,24 @@
             android:launchMode="singleTask"
             android:exported="true">
 
+            <!-- Default launcher intent-filter (keep this) -->
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- NEW: Deep link / OAuth redirect intent-filter -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <!-- Custom scheme for your app (must match capacitor.config.json) -->
+                <data android:scheme="primescene" android:host="*" />
+
+                <!-- Optional: Also support https redirect if Supabase uses web callback -->
+                <data android:scheme="https" android:host="primescene.com.ng" />
+                <data android:scheme="https" android:host="*.supabase.co" /> <!-- Supabase OAuth domains -->
             </intent-filter>
 
         </activity>
@@ -31,11 +46,12 @@
             android:grantUriPermissions="true">
             <meta-data
                 android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"></meta-data>
+                android:resource="@xml/file_paths">
+            </meta-data>
         </provider>
     </application>
 
-    <!-- Permissions -->
-
+    <!-- Permissions (keep these) -->
     <uses-permission android:name="android.permission.INTERNET" />
+
 </manifest>
