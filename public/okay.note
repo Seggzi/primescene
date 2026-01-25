@@ -2,6 +2,5 @@
 
 
 git add .
-git commit -m "Test auto-deploy"
+git commit -m "auto-deploy"
 git push origin main
-
