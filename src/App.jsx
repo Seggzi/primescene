@@ -1,8 +1,8 @@
-// src/App.jsx
+// src/App.jsx - FULL VERSION (user navbar only on user routes, admin isolated)
 
 import { useState, useEffect } from 'react';
-import { Routes, Route, Link, useLocation, Navigate, useParams, useNavigate } from 'react-router-dom';
-import { Tv, Download, Globe, Users, ChevronLeft, Play, Plus, Check, Search, X } from 'lucide-react';
+import { Routes, Route, Link, useLocation, Navigate, Outlet, useNavigate } from 'react-router-dom';
+import { Tv, Download, Globe, Users as UsersIcon, ChevronLeft, Play, Plus, Check, Search, X } from 'lucide-react';
 
 import Navbar from './components/Navbar';
 import Banner from './components/Banner';
@@ -22,13 +22,20 @@ import MovieDetailPage from './pages/MovieDetailPage';
 import PlayerPage from './pages/PlayerPage';
 import Notifications from './pages/Notifications';
 
-import { supabase } from './supabase';
+// ── ADMIN IMPORTS ──
+import AdminLayout from './admin/AdminLayout';
+import AdminDashboard from './admin/AdminDashboard';
+import Movies from './admin/pages/Movies';
+import Users from './admin/pages/Users';
+import Featured from './admin/pages/Featured';
+import AdminLogin from './admin/AdminLogin'; // separate admin login page
 
+import { supabase } from './supabase';
 
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const base = 'https://api.themoviedb.org/3';
 
-// --- GENRE BAR COMPONENT ---
+// ── GENRE BAR COMPONENT ──
 function GenreBar({ activeGenre, onGenreSelect }) {
   const genres = [
     "All", "African", "Horror", "Romantic", "Action", "Comedy", "Sci-Fi", "Documentary", "Mystery", "Crime"
@@ -41,10 +48,11 @@ function GenreBar({ activeGenre, onGenreSelect }) {
         <button
           key={genre}
           onClick={() => onGenreSelect(genre)}
-          className={`px-6 py-1.5 border rounded-full transition text-sm font-semibold whitespace-nowrap ${activeGenre === genre
-            ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]'
-            : 'border-white/30 text-white hover:bg-white/10 hover:border-white'
-            }`}
+          className={`px-6 py-1.5 border rounded-full transition text-sm font-semibold whitespace-nowrap ${
+            activeGenre === genre
+              ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.3)]'
+              : 'border-white/30 text-white hover:bg-white/10 hover:border-white'
+          }`}
         >
           {genre}
         </button>
@@ -53,7 +61,7 @@ function GenreBar({ activeGenre, onGenreSelect }) {
   );
 }
 
-// --- SEARCH PAGE ---
+// ── SEARCH PAGE ──
 function SearchPage() {
   const [results, setResults] = useState([]);
   const [selectedMovie, setSelectedMovie] = useState(null);
@@ -107,7 +115,7 @@ function SearchPage() {
   );
 }
 
-// --- LANDING PAGE ---
+// ── LANDING PAGE ──
 function Landing() {
   const [trending, setTrending] = useState([]);
 
@@ -144,13 +152,13 @@ function Landing() {
           <p className="text-lg sm:text-xl md:text-2xl mb-6 text-white/90">
             Watch anywhere. Cancel anytime.
           </p>
-          <p className="text-base sm:text-lg md:text-xl mb-10 text-align:center text-white/80 max-w-2xl">
+          <p className="text-base sm:text-lg md:text-xl mb-10 text-center text-white/80 max-w-2xl">
             Ready to watch? Sign Up to access your personal cinema.
           </p>
 
           <Link
             to="/login"
-            className="inline-block px-8 py-4 bg-red-600 text-white text-lg sm:text-xl font-bold rounded hover:bg-red-700 transition"
+            className="inline-block px-8 py-4 bg-red-600 text-white text-lg font-bold rounded hover:bg-red-700 transition"
           >
             Sign Up to Start Watching
           </Link>
@@ -201,7 +209,7 @@ function Landing() {
           </div>
           <div className="text-center">
             <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-pink-600 to-purple-600 rounded-xl flex items-center justify-center shadow-2xl">
-              <Users className="w-10 h-10 text-white" />
+              <UsersIcon className="w-10 h-10 text-white" />
             </div>
             <h3 className="text-lg font-bold mb-3">Create profiles for kids</h3>
             <p className="text-white/80 text-sm">Send kids on adventures with their favorite characters in a space made just for them.</p>
@@ -298,7 +306,7 @@ function Landing() {
   );
 }
 
-// Improved ProtectedRoute
+// ── PROTECTED ROUTE ──
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   const location = useLocation();
@@ -311,12 +319,10 @@ function ProtectedRoute({ children }) {
     );
   }
 
-  // If not logged in and not on public pages → go to login
   if (!user && !['/', '/login'].includes(location.pathname)) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  // If logged in and on login or root → go to home
   if (user && ['/', '/login'].includes(location.pathname)) {
     return <Navigate to="/home" replace />;
   }
@@ -324,7 +330,7 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
-// --- HOME PAGE ---
+// ── HOME PAGE ──
 function Home() {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -517,8 +523,7 @@ function Home() {
     </ProtectedRoute>
   );
 }
-
-// --- MY LIST PAGE ---
+// ── MY LIST PAGE ──
 function MyListPage() {
   const { myList } = useMyList();
   const [selectedMovie, setSelectedMovie] = useState(null);
@@ -562,7 +567,7 @@ function MyListPage() {
   );
 }
 
-// --- CATEGORY PAGE ---
+// ── CATEGORY PAGE ──
 function CategoryPage({ title, rows }) {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -603,75 +608,94 @@ function CategoryPage({ title, rows }) {
   );
 }
 
-// --- APP COMPONENT ---
+// ── APP COMPONENT ──
 function App() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  // Auto-redirect logged-in users from root based on role
+  useEffect(() => {
+    if (loading) return;
+
+    if (user && location.pathname === '/') {
+      const checkRole = async () => {
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+
+          if (profile?.role === 'admin') {
+            navigate('/admin', { replace: true });
+          } else {
+            navigate('/home', { replace: true });
+          }
+        } catch (err) {
+          console.error('Role check failed:', err);
+          navigate('/home', { replace: true });
+        }
+      };
+
+      checkRole();
+    }
+  }, [user, loading, location.pathname, navigate]);
+
+  // FIX: This prevents the "refresh" redirect bug. 
+  // It stops the app from loading routes until the user is found.
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-black text-white min-h-screen">
-      <Navbar />
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/" element={user ? <Home /> : <Landing />} />
-        <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-        
-        {/* NEW DETAIL ROUTES - both formats supported */}
-        <Route path="/details/:type/:id" element={<ProtectedRoute><MovieDetailPage /></ProtectedRoute>} />
-        <Route path="/movie/:id" element={<ProtectedRoute><MovieDetailPage /></ProtectedRoute>} />
-        <Route path="/tv/:id" element={<ProtectedRoute><MovieDetailPage /></ProtectedRoute>} />
+        {/* USER ROUTES - WITH NAVBAR */}
+        <Route
+          element={
+            <>
+              <Navbar />
+              <Outlet />
+            </>
+          }
+        >
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+          <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
+          <Route path="/my-list" element={<ProtectedRoute><MyListPage /></ProtectedRoute>} />
+          <Route path="/details/:type/:id" element={<ProtectedRoute><MovieDetailPage /></ProtectedRoute>} />
+          <Route path="/movie/:id" element={<ProtectedRoute><MovieDetailPage /></ProtectedRoute>} />
+          <Route path="/tv/:id" element={<ProtectedRoute><MovieDetailPage /></ProtectedRoute>} />
+          <Route path="/watch/:type/:id" element={<ProtectedRoute><PlayerPage /></ProtectedRoute>} />
+          <Route path="/manage-profile" element={<ProtectedRoute><ManageProfile /></ProtectedRoute>} />
+          <Route path="/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
+          <Route path="/help-center" element={<HelpCenter />} />
+          <Route path="/notifications" element={<Notifications />} />
 
-        <Route path="/watch/:type/:id" element={<ProtectedRoute><PlayerPage /></ProtectedRoute>} />
-        <Route path="/search" element={<ProtectedRoute><SearchPage /></ProtectedRoute>} />
-        <Route path="/my-list" element={<ProtectedRoute><MyListPage /></ProtectedRoute>} />
-        <Route path="/manage-profile" element={<ProtectedRoute><ManageProfile /></ProtectedRoute>} />
-        <Route path="/account-settings" element={<ProtectedRoute><AccountSettings /></ProtectedRoute>} />
-        <Route path="/help-center" element={<HelpCenter />} />
-        <Route path="/notifications" element={<Notifications />} />
+          {/* CATEGORY ROUTES */}
+          <Route path="/tv-shows" element={<ProtectedRoute><CategoryPage title="TV Shows" rows={[]} /></ProtectedRoute>} />
+          <Route path="/movies" element={<ProtectedRoute><CategoryPage title="Movies" rows={[]} /></ProtectedRoute>} />
+          <Route path="/animation" element={<ProtectedRoute><CategoryPage title="Animation" rows={[]} /></ProtectedRoute>} />
+          <Route path="/novels" element={<ProtectedRoute><CategoryPage title="Novels" rows={[]} /></ProtectedRoute>} />
+          <Route path="/most-watched" element={<ProtectedRoute><CategoryPage title="Most Watched" rows={[]} /></ProtectedRoute>} />
+        </Route>
+
+        {/* ADMIN ROUTES - NO NAVBAR */}
+        <Route path="/admin/login" element={<AdminLogin />} />
         
-        {/* Category routes - all protected */}
-        <Route path="/tv-shows" element={<ProtectedRoute><CategoryPage
-          title="TV Shows"
-          rows={[
-            { title: "Popular TV Shows", fetchUrl: `${base}/tv/popular?api_key=${API_KEY}` },
-            { title: "Top Rated TV Shows", fetchUrl: `${base}/tv/top_rated?api_key=${API_KEY}` },
-            { title: "Airing Today", fetchUrl: `${base}/tv/airing_today?api_key=${API_KEY}` },
-            { title: "On The Air", fetchUrl: `${base}/tv/on_the_air?api_key=${API_KEY}` },
-          ]}
-        /></ProtectedRoute>} />
-        <Route path="/movies" element={<ProtectedRoute><CategoryPage
-          title="Movies"
-          rows={[
-            { title: "Popular Movies", fetchUrl: `${base}/movie/popular?api_key=${API_KEY}` },
-            { title: "Top Rated Movies", fetchUrl: `${base}/movie/top_rated?api_key=${API_KEY}` },
-            { title: "Now Playing", fetchUrl: `${base}/movie/now_playing?api_key=${API_KEY}` },
-            { title: "Upcoming Movies", fetchUrl: `${base}/movie/upcoming?api_key=${API_KEY}` },
-          ]}
-        /></ProtectedRoute>} />
-        <Route path="/animation" element={<ProtectedRoute><CategoryPage
-          title="Animation"
-          rows={[
-            { title: "Animated Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=16` },
-            { title: "Family Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=10751` },
-            { title: "Animated TV Shows", fetchUrl: `${base}/discover/tv?api_key=${API_KEY}&with_genres=16` },
-          ]}
-        /></ProtectedRoute>} />
-        <Route path="/novels" element={<ProtectedRoute><CategoryPage
-          title="Novels"
-          rows={[
-            { title: "Drama Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=18` },
-            { title: "Romance Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=10749` },
-            { title: "Historical Movies", fetchUrl: `${base}/discover/movie?api_key=${API_KEY}&with_genres=36` },
-          ]}
-        /></ProtectedRoute>} />
-        <Route path="/most-watched" element={<ProtectedRoute><CategoryPage
-          title="Most Watched"
-          rows={[
-            { title: "Trending This Week", fetchUrl: `${base}/trending/all/week?api_key=${API_KEY}` },
-            { title: "Trending Today", fetchUrl: `${base}/trending/all/day?api_key=${API_KEY}` },
-            { title: "Popular Overall", fetchUrl: `${base}/movie/popular?api_key=${API_KEY}` },
-          ]}
-        /></ProtectedRoute>} />
+        {/* Wrap the Admin Layout in ProtectedRoute so it doesn't kick you out on refresh */}
+        <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="movies" element={<Movies />} />
+          <Route path="users" element={<Users />} />
+          <Route path="featured" element={<Featured />} />
+        </Route>
       </Routes>
     </div>
   );

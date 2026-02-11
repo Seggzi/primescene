@@ -1,15 +1,16 @@
-// src/components/Banner.jsx - FULL PROFESSIONAL VERSION (Fanart API completely removed + shorter 1-minute cache)
+'use client';
 
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMyList } from '../context/MyListContext';
 import { Play, Volume2, VolumeX, Info, Plus, Check } from 'lucide-react';
+import { supabase } from '../supabase';
 
 // --- CONFIGURATION ---
 const CACHE_KEY = 'prime_scene_banner_cache';
 const CACHE_DURATION = 1 * 60 * 1000; // 1 minute
 
-const TMDB_READ_TOKEN = import.meta.env.VITE_TMDB_READ_TOKEN; // ← Must be in .env!
+const TMDB_READ_TOKEN = import.meta.env.VITE_TMDB_READ_TOKEN;
 const OMDB_KEY = 'd92401b9';
 
 // --- GENRE MAPPER ---
@@ -35,7 +36,6 @@ function Banner() {
   const [omdbData, setOmdbData] = useState({});
   const [starring, setStarring] = useState('');
   const [isMuted, setIsMuted] = useState(true);
-  const [categoryName, setCategoryName] = useState("Featured");
   const [isLoading, setIsLoading] = useState(true);
   const [showOverview, setShowOverview] = useState(true);
   const [showCategory, setShowCategory] = useState(false);
@@ -49,7 +49,6 @@ function Banner() {
 
   const startHideTimer = () => {
     if (hideTimer) clearTimeout(hideTimer);
-
     hideTimer = setTimeout(() => {
       setShowOverview(false);
       setShowCategory(true);
@@ -74,7 +73,7 @@ function Banner() {
     return res.json();
   };
 
-  // --- FETCH DATA ---
+  // Load banner data
   useEffect(() => {
     const loadBanner = async () => {
       setIsLoading(true);
@@ -83,11 +82,10 @@ function Banner() {
       const cached = localStorage.getItem(CACHE_KEY);
       if (cached) {
         try {
-          const { movie: cMovie, trailerKey: cKey, categoryName: cCat, omdbData: cOmdb, starring: cStarring, ts } = JSON.parse(cached);
+          const { movie: cMovie, trailerKey: cKey, omdbData: cOmdb, starring: cStarring, ts } = JSON.parse(cached);
           if (Date.now() - ts < CACHE_DURATION) {
             setMovie(cMovie);
             setTrailerKey(cKey);
-            setCategoryName(cCat);
             setOmdbData(cOmdb || {});
             setStarring(cStarring || '');
             setIsLoading(false);
@@ -98,42 +96,38 @@ function Banner() {
         }
       }
 
-      const categories = [
-        { name: 'Trending', type: 'movie', url: `trending/movie/week` },
-        { name: 'Nollywood', type: 'movie', url: `discover/movie?with_origin_country=NG&sort_by=primary_release_date.desc&vote_count.gte=1` },
-        { name: 'Anime', type: 'tv', url: `discover/tv?with_genres=16&with_original_language=ja&sort_by=popularity.desc` },
-        { name: 'Action', type: 'movie', url: `discover/movie?with_genres=28&sort_by=popularity.desc` },
-        { name: 'K-Drama', type: 'tv', url: `discover/tv?with_original_language=ko&sort_by=popularity.desc` },
-        { name: 'Sci-Fi', type: 'movie', url: `discover/movie?with_genres=878&sort_by=popularity.desc` },
-      ];
-
       let selected = null;
-      let catName = "Popular";
 
-      const randomCat = categories[Math.floor(Math.random() * categories.length)];
       try {
-        const data = await tmdbFetch(randomCat.url);
-        if (data.results?.length) {
-          const candidates = data.results.slice(0, 15);
-          selected = candidates[Math.floor(Math.random() * candidates.length)];
-          selected.media_type = selected.media_type || randomCat.type;
-          catName = randomCat.name;
+        // Get #1 featured from Supabase (position 1)
+        const { data: featured, error } = await supabase
+          .from('movies')
+          .select('id, title, poster_url, description, release_year, full_video_url, tmdb_id')
+          .eq('is_featured', true)
+          .order('featured_position', { ascending: true })
+          .limit(1);
+
+        if (error) throw error;
+
+        if (featured?.length > 0) {
+          selected = featured[0];
+          selected.media_type = 'movie'; // Assume movie for now
         }
       } catch (err) {
-        console.warn(`Random category ${randomCat.name} failed:`, err);
+        console.warn("Supabase featured fetch failed:", err);
       }
 
       if (!selected) {
+        // Fallback to random TMDB popular
         try {
           const data = await tmdbFetch(`movie/popular`);
           if (data.results?.length) {
             const candidates = data.results.slice(0, 15);
             selected = candidates[Math.floor(Math.random() * candidates.length)];
             selected.media_type = 'movie';
-            catName = "Popular";
           }
         } catch (err) {
-          console.error("Fallback popular failed:", err);
+          console.error("TMDB fallback failed:", err);
         }
       }
 
@@ -143,11 +137,14 @@ function Banner() {
       }
 
       try {
+        const tmdbId = selected.tmdb_id || selected.id; // Use tmdb_id if available
+        const mediaType = selected.media_type || 'movie';
+
         const [extData, imgData, vidData, creditsData] = await Promise.all([
-          tmdbFetch(`${selected.media_type}/${selected.id}/external_ids`),
-          tmdbFetch(`${selected.media_type}/${selected.id}/images?include_image_language=en,null`),
-          tmdbFetch(`${selected.media_type}/${selected.id}/videos`),
-          tmdbFetch(`${selected.media_type}/${selected.id}/credits`)
+          tmdbFetch(`${mediaType}/${tmdbId}/external_ids`),
+          tmdbFetch(`${mediaType}/${tmdbId}/images?include_image_language=en,null`),
+          tmdbFetch(`${mediaType}/${tmdbId}/videos`),
+          tmdbFetch(`${mediaType}/${tmdbId}/credits`)
         ]);
 
         const imdbId = extData.imdb_id;
@@ -174,14 +171,12 @@ function Banner() {
           }
         }
 
-        setCategoryName(catName);
         setMovie(selected);
 
-        // Cache (no Fanart data)
+        // Cache
         localStorage.setItem(CACHE_KEY, JSON.stringify({
           movie: selected,
           trailerKey: primaryTrailer?.key ?? null,
-          categoryName: catName,
           omdbData: omdbFetched,
           starring: starringNames,
           ts: Date.now()
@@ -204,7 +199,7 @@ function Banner() {
     player?.postMessage(JSON.stringify({ event: 'command', func: cmd, args: [] }), '*');
   }, [isMuted, trailerKey]);
 
-  // Overview & category control
+  // Overview timer
   useEffect(() => {
     if (!bannerRef.current) return;
     setShowOverview(true);
@@ -249,20 +244,16 @@ function Banner() {
   const ageRating = omdbData.rated;
   const runtime = omdbData.runtime;
 
-  const categoryDisplay = categoryName === "Trending" 
-    ? "Trending Now" 
-    : categoryName === "Popular" 
-      ? (genres !== 'N/A' ? `Popular in ${genres}` : "Popular Now")
-      : `Featured ${categoryName}`;
+  const categoryDisplay = "Featured Now";
 
   return (
-    <div ref={bannerRef} className="relative h-[70vh] sm:h-[75vh] md:h-[85vh] lg:h-[95vh] overflow-hidden group">
-      {/* Background - now only TMDB backdrop */}
+    <div ref={bannerRef} className="relative h-[80vh] overflow-hidden group">
+      {/* Background */}
       <img
-        src={`https://image.tmdb.org/t/p/original${movie.backdrop_path || movie.poster_path}`}
+        src={`https://image.tmdb.org/t/p/original${movie.backdrop_path || movie.poster_url}`}
         alt={title}
         className="absolute inset-0 w-full h-full object-cover brightness-[0.6]"
-        onError={e => e.target.src = 'https://via.placeholder.com/1920x1080?text=Featured+Banner'}
+        onError={(e) => e.target.src = 'https://via.placeholder.com/1920x1080?text=Featured+Banner'}
       />
 
       {/* Trailer */}
@@ -289,13 +280,13 @@ function Banner() {
           </span>
         </div>
 
-        {/* Logo or Title - now only TMDB logo */}
+        {/* Logo or Title */}
         {movie.logoPath ? (
           <img
             src={`https://image.tmdb.org/t/p/w500${movie.logoPath}`}
             alt={title}
             className="w-[110px] sm:w-[140px] md:w-[180px] lg:w-[220px] xl:w-[260px] h-auto object-contain drop-shadow-2xl mb-3 sm:mb-4"
-            onError={e => e.target.src = 'https://via.placeholder.com/500x200?text=' + encodeURIComponent(title)}
+            onError={(e) => e.target.src = 'https://via.placeholder.com/500x200?text=' + encodeURIComponent(title)}
           />
         ) : (
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-3 sm:mb-4 tracking-tight drop-shadow-2xl leading-tight">
@@ -303,7 +294,7 @@ function Banner() {
           </h1>
         )}
 
-        {/* Meta Row */}
+        {/* Meta */}
         <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-4 gap-y-2 text-white/90 text-xs sm:text-sm mb-4 sm:mb-6">
           <span className="text-green-400 font-semibold">★ {rating}</span>
           <span>{year}</span>
@@ -313,7 +304,7 @@ function Banner() {
           <span className="text-gray-200">{genres}</span>
         </div>
 
-        {/* Starring line */}
+        {/* Starring */}
         {starring && (
           <div className="text-white/80 text-sm mb-4 sm:mb-6">
             Starring: {starring}
@@ -323,7 +314,7 @@ function Banner() {
         {/* Overview */}
         <div className={`overflow-hidden transition-all duration-1000 ease-in-out ${showOverview ? 'max-h-96 opacity-100 mb-6 sm:mb-8' : 'max-h-0 opacity-0 mb-0'}`}>
           <p className="text-sm sm:text-base md:text-lg text-white/90 leading-relaxed drop-shadow-lg">
-            {movie.overview || 'No overview available.'}
+            {movie.description || movie.overview || 'No overview available.'}
           </p>
         </div>
 
